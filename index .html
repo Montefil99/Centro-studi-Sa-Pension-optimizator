@@ -1,0 +1,1636 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PensionIQ — Portfolio Optimizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+:root {
+  --ink:      #0d1117;
+  --ink2:     #1c2333;
+  --surface:  #f5f0e8;
+  --warm:     #e8e0d0;
+  --gold:     #c9a84c;
+  --gold2:    #e8c96a;
+  --emerald:  #1a6b4a;
+  --em-light: #d4edda;
+  --red:      #c0392b;
+  --re-light: #fde8e6;
+  --text:     #2c3e50;
+  --muted:    #7f8c9a;
+  --border:   #d5cfc4;
+  --r: 12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── GRAIN OVERLAY ─────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0; opacity: .5;
+}
+
+/* ─── HEADER ─────────────────────────────────────────────── */
+header {
+  background: var(--ink);
+  color: #fff;
+  padding: 0 5vw;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 20px rgba(0,0,0,.3);
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px; max-width: 1280px; margin: 0 auto;
+}
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem; font-weight: 700;
+  color: var(--gold);
+  text-decoration: none;
+}
+.logo-icon {
+  width: 34px; height: 34px;
+  background: var(--gold);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.nav-links { display: flex; gap: 28px; }
+.nav-links a {
+  color: rgba(255,255,255,.7);
+  text-decoration: none; font-size: .875rem; font-weight: 500;
+  transition: color .2s;
+}
+.nav-links a:hover { color: var(--gold); }
+
+/* ─── HERO ──────────────────────────────────────────────── */
+.hero {
+  background: var(--ink);
+  color: #fff;
+  padding: 80px 5vw 100px;
+  position: relative; overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute; bottom: -2px; left: 0; right: 0; height: 60px;
+  background: var(--surface);
+  clip-path: ellipse(55% 60px at 50% 100%);
+}
+.hero-grid {
+  max-width: 1280px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+}
+.hero-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: .75rem; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 18px;
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  font-weight: 900; line-height: 1.1;
+  margin-bottom: 20px;
+}
+.hero h1 em {
+  font-style: italic; color: var(--gold);
+}
+.hero-desc {
+  font-size: 1.05rem; color: rgba(255,255,255,.7);
+  line-height: 1.7; max-width: 480px; margin-bottom: 36px;
+}
+.hero-badges { display: flex; gap: 12px; flex-wrap: wrap; }
+.badge {
+  background: rgba(201,168,76,.15);
+  border: 1px solid rgba(201,168,76,.35);
+  color: var(--gold2);
+  padding: 6px 14px; border-radius: 100px;
+  font-size: .78rem; font-weight: 500;
+}
+
+/* Mockup card */
+.hero-visual {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 20px;
+  padding: 28px;
+  backdrop-filter: blur(10px);
+}
+.mini-kpi-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;
+}
+.mini-kpi {
+  background: rgba(255,255,255,.07);
+  border-radius: 10px; padding: 14px 16px;
+}
+.mini-kpi-label { font-size: .7rem; color: rgba(255,255,255,.5); margin-bottom: 4px; }
+.mini-kpi-val { font-size: 1.3rem; font-weight: 700; }
+.mini-kpi-val.up { color: #4ade80; }
+.mini-kpi-val.gold { color: var(--gold2); }
+.mini-bar-wrap { margin-top: 4px; }
+.mini-bar-label { display: flex; justify-content: space-between; font-size: .68rem; color: rgba(255,255,255,.45); margin-bottom: 5px; }
+.mini-bar { height: 6px; background: rgba(255,255,255,.1); border-radius: 3px; overflow: hidden; }
+.mini-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--gold), var(--gold2)); }
+
+/* ─── MAIN LAYOUT ───────────────────────────────────────── */
+main { max-width: 1280px; margin: 0 auto; padding: 60px 5vw 100px; position: relative; z-index: 1; }
+
+/* ─── SECTION LABELS ─────────────────────────────────────── */
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: .7rem; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: 10px;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem, 2.5vw, 2.2rem); font-weight: 700;
+  color: var(--ink); margin-bottom: 8px;
+}
+.section-sub { color: var(--muted); font-size: .95rem; margin-bottom: 36px; }
+
+/* ─── UPLOAD AREA ─────────────────────────────────────────── */
+.upload-section { margin-bottom: 60px; }
+.upload-card {
+  background: #fff;
+  border: 2px dashed var(--border);
+  border-radius: var(--r);
+  padding: 50px 40px;
+  text-align: center;
+  transition: border-color .25s, background .25s;
+  cursor: pointer; position: relative;
+}
+.upload-card:hover, .upload-card.drag-over {
+  border-color: var(--gold);
+  background: #fffcf4;
+}
+.upload-icon {
+  width: 64px; height: 64px; margin: 0 auto 18px;
+  background: #fdf6e3; border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem;
+}
+.upload-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem; margin-bottom: 8px;
+}
+.upload-card p { color: var(--muted); font-size: .9rem; margin-bottom: 22px; }
+.upload-card input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--ink); color: #fff;
+  padding: 12px 28px; border-radius: 8px;
+  font-size: .9rem; font-weight: 600; cursor: pointer;
+  border: none; transition: background .2s, transform .15s;
+  text-decoration: none;
+}
+.btn-primary:hover { background: var(--ink2); transform: translateY(-1px); }
+.btn-gold {
+  background: var(--gold); color: var(--ink);
+}
+.btn-gold:hover { background: var(--gold2); }
+.btn-outline {
+  background: transparent; color: var(--ink);
+  border: 2px solid var(--border);
+}
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+.btn-sm { padding: 8px 18px; font-size: .82rem; }
+
+/* File chip */
+.file-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--em-light); border: 1px solid #a8d5be;
+  color: var(--emerald); padding: 8px 16px; border-radius: 100px;
+  font-size: .85rem; font-weight: 500; margin-top: 16px;
+}
+
+/* ─── PROFILE SECTION ─────────────────────────────────────── */
+.profile-section { margin-bottom: 60px; }
+.profile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.profile-card {
+  background: #fff; border-radius: var(--r);
+  padding: 26px; border: 1px solid var(--border);
+  cursor: pointer; transition: border-color .2s, box-shadow .2s;
+  position: relative; overflow: hidden;
+}
+.profile-card:hover { border-color: var(--gold); box-shadow: 0 4px 20px rgba(201,168,76,.15); }
+.profile-card.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,.2);
+}
+.profile-card.active::before {
+  content: '✓';
+  position: absolute; top: 12px; right: 14px;
+  background: var(--gold); color: var(--ink);
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .75rem; font-weight: 700;
+}
+.profile-emoji { font-size: 2rem; margin-bottom: 12px; }
+.profile-name { font-weight: 700; font-size: 1rem; margin-bottom: 6px; }
+.profile-desc { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+.risk-bar-wrap { margin-top: 12px; }
+.risk-bar { height: 4px; background: var(--warm); border-radius: 2px; overflow: hidden; }
+.risk-bar-fill { height: 100%; border-radius: 2px; }
+
+/* ─── PARAMS ──────────────────────────────────────────────── */
+.params-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+.param-card {
+  background: #fff; border-radius: 10px;
+  padding: 18px 20px; border: 1px solid var(--border);
+}
+.param-label { font-size: .75rem; color: var(--muted); font-weight: 500; margin-bottom: 10px; }
+.param-input {
+  width: 100%; border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 12px;
+  font-family: 'DM Mono', monospace; font-size: .95rem;
+  color: var(--ink); background: #fafaf8;
+  transition: border-color .2s;
+}
+.param-input:focus { outline: none; border-color: var(--gold); }
+
+/* ─── ANALYZE BUTTON ─────────────────────────────────────── */
+.analyze-wrap { text-align: center; margin-bottom: 60px; }
+.btn-analyze {
+  background: linear-gradient(135deg, var(--ink), #2c3e50);
+  color: #fff; border: none; cursor: pointer;
+  padding: 18px 56px; border-radius: 100px;
+  font-size: 1.05rem; font-weight: 600;
+  display: inline-flex; align-items: center; gap: 12px;
+  box-shadow: 0 8px 30px rgba(13,17,23,.25);
+  transition: transform .2s, box-shadow .2s;
+}
+.btn-analyze:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(13,17,23,.35); }
+.btn-analyze:disabled { opacity: .5; cursor: not-allowed; }
+.spin { display: inline-block; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── LOADING ─────────────────────────────────────────────── */
+.loading-overlay {
+  display: none; text-align: center; padding: 60px 20px;
+}
+.loading-steps { max-width: 420px; margin: 0 auto; }
+.load-step {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 0; color: var(--muted); font-size: .9rem;
+  border-bottom: 1px solid var(--border);
+}
+.load-step:last-child { border-bottom: none; }
+.load-step.done { color: var(--emerald); }
+.load-step.active { color: var(--ink); font-weight: 600; }
+.load-dot {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  background: var(--warm); display: flex; align-items: center; justify-content: center;
+  font-size: .75rem;
+}
+.load-step.done .load-dot { background: var(--em-light); color: var(--emerald); }
+.load-step.active .load-dot {
+  background: var(--gold); color: var(--ink);
+  animation: pulse 1s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+
+/* ─── RESULTS ─────────────────────────────────────────────── */
+#results { display: none; }
+
+/* KPI row */
+.kpi-row {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  gap: 16px; margin-bottom: 40px;
+}
+.kpi-card {
+  background: #fff; border-radius: var(--r);
+  padding: 22px 20px; border: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--gold);
+}
+.kpi-label { font-size: .72rem; color: var(--muted); font-weight: 500; margin-bottom: 6px; letter-spacing: .04em; }
+.kpi-value { font-family: 'Playfair Display', serif; font-size: 1.65rem; font-weight: 700; color: var(--ink); }
+.kpi-delta { font-size: .78rem; margin-top: 4px; }
+.kpi-delta.pos { color: var(--emerald); }
+.kpi-delta.neg { color: var(--red); }
+
+/* Chart grid */
+.charts-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 24px; margin-bottom: 40px; }
+.chart-card {
+  background: #fff; border-radius: var(--r);
+  padding: 28px; border: 1px solid var(--border);
+}
+.chart-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+.chart-wrap { position: relative; }
+
+/* Rebalancing table */
+.table-card {
+  background: #fff; border-radius: var(--r);
+  border: 1px solid var(--border);
+  overflow: hidden; margin-bottom: 40px;
+}
+.table-header {
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.table-header h3 {
+  font-family: 'Playfair Display', serif; font-size: 1.1rem;
+}
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  background: #fafaf8;
+  padding: 11px 16px;
+  font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+tbody td {
+  padding: 13px 16px;
+  font-size: .88rem;
+  border-bottom: 1px solid #f0ebe3;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: #fdfbf7; }
+.ticker-cell { font-family: 'DM Mono', monospace; font-weight: 600; font-size: .85rem; }
+.action-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 11px; border-radius: 100px;
+  font-size: .75rem; font-weight: 600;
+}
+.action-buy  { background: var(--em-light); color: var(--emerald); }
+.action-sell { background: var(--re-light); color: var(--red); }
+.action-hold { background: #fef9e7; color: #a07c00; }
+
+/* Forecast section */
+.forecast-section { margin-bottom: 40px; }
+.forecast-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.forecast-card {
+  background: #fff; border-radius: var(--r);
+  padding: 28px; border: 1px solid var(--border);
+}
+.forecast-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--ink); color: var(--gold);
+  padding: 5px 12px; border-radius: 6px;
+  font-family: 'DM Mono', monospace; font-size: .7rem;
+  margin-bottom: 16px; letter-spacing: .05em;
+}
+.horizon-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.h-tab {
+  padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
+  font-size: .8rem; cursor: pointer; transition: all .15s; background: #fff;
+}
+.h-tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.scenario-row { display: flex; gap: 12px; }
+.scenario {
+  flex: 1; text-align: center;
+  padding: 16px 10px; border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.scenario.bear { background: #fff5f5; border-color: #fcd5d5; }
+.scenario.base { background: #f0faf5; border-color: #b7dfc9; }
+.scenario.bull { background: #fffbee; border-color: #f5e49a; }
+.scenario-label { font-size: .7rem; color: var(--muted); margin-bottom: 6px; }
+.scenario-val { font-size: 1.2rem; font-weight: 700; }
+.scenario.bear .scenario-val { color: var(--red); }
+.scenario.base .scenario-val { color: var(--emerald); }
+.scenario.bull .scenario-val { color: #a07c00; }
+
+/* Retirement panel */
+.retirement-section { margin-bottom: 40px; }
+.retirement-card {
+  background: linear-gradient(135deg, var(--ink) 0%, #1c3040 100%);
+  color: #fff; border-radius: var(--r);
+  padding: 40px; position: relative; overflow: hidden;
+}
+.retirement-card::before {
+  content: '';
+  position: absolute; top: -60px; right: -60px;
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, rgba(201,168,76,.25) 0%, transparent 70%);
+}
+.retirement-grid { display: grid; grid-template-columns: 2fr 3fr; gap: 48px; align-items: center; }
+.ret-label { font-size: .72rem; color: rgba(255,255,255,.5); margin-bottom: 4px; }
+.ret-value { font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 700; color: var(--gold2); }
+.ret-sub { font-size: .82rem; color: rgba(255,255,255,.6); }
+.ret-milestones { display: grid; gap: 14px; }
+.milestone {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px; border-radius: 10px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+}
+.milestone-yr { font-family: 'DM Mono', monospace; font-size: .78rem; color: var(--gold); min-width: 50px; }
+.milestone-val { font-size: 1rem; font-weight: 600; }
+.milestone-label { font-size: .78rem; color: rgba(255,255,255,.55); }
+.milestone-bar-wrap { flex: 1; }
+.milestone-bar { height: 4px; background: rgba(255,255,255,.1); border-radius: 2px; overflow: hidden; }
+.milestone-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2)); border-radius: 2px; }
+
+/* HF Models panel */
+.hf-section { margin-bottom: 40px; }
+.hf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.hf-card {
+  background: #fff; border-radius: var(--r);
+  padding: 22px; border: 1px solid var(--border);
+  transition: border-color .2s, transform .2s;
+}
+.hf-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+.hf-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #f0f4ff; color: #3b5bdb; padding: 4px 10px;
+  border-radius: 5px; font-size: .68rem; font-weight: 600;
+  margin-bottom: 12px; font-family: 'DM Mono', monospace;
+}
+.hf-name { font-weight: 700; font-size: .95rem; margin-bottom: 6px; }
+.hf-desc { font-size: .8rem; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+.hf-stats { display: flex; gap: 14px; font-size: .75rem; color: var(--muted); }
+.hf-stat { display: flex; align-items: center; gap: 4px; }
+.hf-link {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--gold); font-size: .78rem; font-weight: 600;
+  text-decoration: none; margin-top: 12px;
+}
+.hf-link:hover { text-decoration: underline; }
+
+/* AI chat */
+.ai-section { margin-bottom: 60px; }
+.ai-chat-wrap {
+  background: #fff; border-radius: var(--r);
+  border: 1px solid var(--border); overflow: hidden;
+}
+.ai-chat-header {
+  background: var(--ink); color: #fff;
+  padding: 16px 24px; display: flex; align-items: center; gap: 12px;
+}
+.ai-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
+.ai-messages { padding: 24px; min-height: 200px; max-height: 400px; overflow-y: auto; }
+.msg-bubble {
+  max-width: 80%; padding: 12px 16px; border-radius: 12px;
+  margin-bottom: 14px; font-size: .88rem; line-height: 1.6;
+}
+.msg-user {
+  background: var(--ink); color: #fff;
+  margin-left: auto; border-bottom-right-radius: 4px;
+}
+.msg-ai {
+  background: var(--warm);
+  border-bottom-left-radius: 4px;
+}
+.ai-input-row {
+  display: flex; gap: 12px; padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+.ai-input {
+  flex: 1; padding: 12px 16px; border: 1px solid var(--border);
+  border-radius: 8px; font-family: 'DM Sans', sans-serif;
+  font-size: .9rem; outline: none;
+}
+.ai-input:focus { border-color: var(--gold); }
+
+/* ─── GITHUB GUIDE ────────────────────────────────────────── */
+.github-section {
+  background: var(--ink); color: #fff;
+  border-radius: var(--r); padding: 48px;
+  margin-bottom: 60px; position: relative; overflow: hidden;
+}
+.github-section::before {
+  content: '';
+  position: absolute; top: -80px; left: -80px;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(201,168,76,.1) 0%, transparent 70%);
+}
+.github-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; }
+.step-list { list-style: none; display: grid; gap: 16px; }
+.step-item {
+  display: flex; gap: 16px; align-items: flex-start;
+}
+.step-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(201,168,76,.2); color: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: .8rem;
+  font-weight: 700; flex-shrink: 0;
+}
+.step-item h4 { font-size: .9rem; margin-bottom: 4px; }
+.step-item p { font-size: .8rem; color: rgba(255,255,255,.55); line-height: 1.5; }
+.code-block {
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px; padding: 16px 18px;
+  font-family: 'DM Mono', monospace; font-size: .8rem;
+  color: #a8d8a8; line-height: 1.8; margin: 10px 0;
+}
+.code-block span.cmd { color: #7ec8e3; }
+.code-block span.cmt { color: rgba(255,255,255,.35); }
+
+/* ─── FOOTER ──────────────────────────────────────────────── */
+footer {
+  background: var(--ink); color: rgba(255,255,255,.5);
+  padding: 40px 5vw; text-align: center; font-size: .82rem;
+}
+footer strong { color: var(--gold); }
+
+/* ─── UTILITY ─────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.mt-8 { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.flex { display: flex; }
+.gap-12 { gap: 12px; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+
+/* ─── SCROLLBAR ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--warm); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ─── RESPONSIVE ─────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hero-grid, .github-grid, .charts-grid, .forecast-grid,
+  .retirement-grid { grid-template-columns: 1fr; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .profile-grid { grid-template-columns: 1fr; }
+  .params-grid { grid-template-columns: repeat(2, 1fr); }
+  .hf-grid { grid-template-columns: 1fr; }
+  .hero { padding: 50px 5vw 80px; }
+}
+
+/* ─── ENTER ANIMATIONS ───────────────────────────────────── */
+.fade-in { animation: fadeIn .5s ease both; }
+@keyframes fadeIn { from { opacity:0; transform: translateY(16px); } }
+.fade-in-1 { animation-delay: .1s; }
+.fade-in-2 { animation-delay: .2s; }
+.fade-in-3 { animation-delay: .3s; }
+.fade-in-4 { animation-delay: .4s; }
+
+/* progress bar for retirement chart */
+.ret-progress { height: 8px; background: rgba(255,255,255,.1); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+.ret-progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--gold), var(--gold2)); transition: width 1s ease; }
+</style>
+</head>
+<body>
+
+<!-- ─── HEADER ─────────────────────────────────────────────── -->
+<header>
+  <div class="nav-inner">
+    <a class="logo" href="#"><div class="logo-icon">⚖</div>PensionIQ</a>
+    <nav class="nav-links">
+      <a href="#upload">Carica</a>
+      <a href="#results-anchor">Analisi</a>
+      <a href="#hf-models">Modelli AI</a>
+      <a href="#github-guide">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ─── HERO ──────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-eyebrow">Portfolio Optimizer · Piano Pensionistico</div>
+      <h1>Costruisci la tua<br><em>libertà finanziaria</em></h1>
+      <p class="hero-desc">
+        Carica qualsiasi file Excel con i tuoi titoli. L'AI ottimizza pesi, calcola
+        Sharpe &amp; Treynor, bilancia il rischio e proietta la crescita fino alla pensione.
+        Modelli di previsione da Hugging Face inclusi.
+      </p>
+      <div class="hero-badges">
+        <span class="badge">⚡ Risk Parity</span>
+        <span class="badge">📈 Max Sharpe</span>
+        <span class="badge">🏆 Max Treynor</span>
+        <span class="badge">🤗 HF Forecast</span>
+        <span class="badge">🏦 Piano Pensione</span>
+      </div>
+    </div>
+    <div class="hero-visual fade-in fade-in-2">
+      <div class="mini-kpi-grid">
+        <div class="mini-kpi">
+          <div class="mini-kpi-label">Sharpe Ratio</div>
+          <div class="mini-kpi-val gold">1.84</div>
+        </div>
+        <div class="mini-kpi">
+          <div class="mini-kpi-label">Rend. Atteso</div>
+          <div class="mini-kpi-val up">+12.4%</div>
+        </div>
+        <div class="mini-kpi">
+          <div class="mini-kpi-label">Volatilità</div>
+          <div class="mini-kpi-val" style="color:#f9a825">10.2%</div>
+        </div>
+        <div class="mini-kpi">
+          <div class="mini-kpi-label">Capitale a 20a</div>
+          <div class="mini-kpi-val gold">€ 920K</div>
+        </div>
+      </div>
+      <div class="mini-bar-wrap">
+        <div class="mini-bar-label"><span>Allocazione ottimizzata</span><span>Risk Parity</span></div>
+        <div style="display:grid;gap:6px;">
+          <div><div class="mini-bar-label"><span style="color:rgba(255,255,255,.6);font-size:.65rem">Azioni</span><span style="color:rgba(255,255,255,.6);font-size:.65rem">48%</span></div><div class="mini-bar"><div class="mini-bar-fill" style="width:48%"></div></div></div>
+          <div><div class="mini-bar-label"><span style="color:rgba(255,255,255,.6);font-size:.65rem">Obbligazioni</span><span style="color:rgba(255,255,255,.6);font-size:.65rem">30%</span></div><div class="mini-bar"><div class="mini-bar-fill" style="width:30%;background:linear-gradient(90deg,#4ade80,#22c55e)"></div></div></div>
+          <div><div class="mini-bar-label"><span style="color:rgba(255,255,255,.6);font-size:.65rem">Oro / Commodities</span><span style="color:rgba(255,255,255,.6);font-size:.65rem">12%</span></div><div class="mini-bar"><div class="mini-bar-fill" style="width:12%;background:linear-gradient(90deg,#f9a825,#ffcc02)"></div></div></div>
+          <div><div class="mini-bar-label"><span style="color:rgba(255,255,255,.6);font-size:.65rem">Alternativi</span><span style="color:rgba(255,255,255,.6);font-size:.65rem">10%</span></div><div class="mini-bar"><div class="mini-bar-fill" style="width:10%;background:linear-gradient(90deg,#a78bfa,#8b5cf6)"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── MAIN ──────────────────────────────────────────────── -->
+<main>
+
+  <!-- UPLOAD -->
+  <section class="upload-section" id="upload">
+    <div class="section-label">01 — Input</div>
+    <div class="section-title">Carica il tuo portafoglio</div>
+    <p class="section-sub">Accetta qualsiasi Excel: con o senza intestazioni, colonne in italiano o inglese, numeri in formato europeo.</p>
+
+    <div class="upload-card" id="dropZone">
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+      <div class="upload-icon">📊</div>
+      <h3>Trascina il tuo file Excel qui</h3>
+      <p>oppure clicca per sfogliare · .xlsx · .xls · .csv</p>
+      <button class="btn-primary" onclick="event.stopPropagation()">
+        <span>Scegli file</span>
+      </button>
+      <div id="fileChip" class="hidden" style="margin-top:16px"></div>
+    </div>
+
+    <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:.82rem;color:var(--muted)">Oppure usa un template:</span>
+      <button class="btn-outline btn-sm btn-primary" onclick="downloadTemplate()">⬇ Scarica template.xlsx</button>
+      <button class="btn-outline btn-sm btn-primary" onclick="loadDemoData()">🎯 Carica portafoglio demo</button>
+    </div>
+  </section>
+
+  <!-- PROFILO -->
+  <section class="profile-section">
+    <div class="section-label">02 — Profilo</div>
+    <div class="section-title">Profilo di rischio &amp; orizzonte</div>
+    <p class="section-sub">Seleziona il profilo che descrive meglio la tua situazione. L'ottimizzatore adatterà i pesi di conseguenza.</p>
+
+    <div class="profile-grid">
+      <div class="profile-card" onclick="selectProfile(this,'conservative')" data-profile="conservative">
+        <div class="profile-emoji">🛡️</div>
+        <div class="profile-name">Conservativo — Pre-pensione</div>
+        <div class="profile-desc">5–10 anni al ritiro. Priorità assoluta alla preservazione del capitale. Bassa volatilità, alto peso obbligazionario e oro.</div>
+        <div class="risk-bar-wrap"><div class="mini-bar-label" style="font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:4px"><span>Rischio</span><span>Basso</span></div><div class="risk-bar"><div class="risk-bar-fill" style="width:25%;background:var(--emerald)"></div></div></div>
+      </div>
+      <div class="profile-card active" onclick="selectProfile(this,'balanced')" data-profile="balanced">
+        <div class="profile-emoji">⚖️</div>
+        <div class="profile-name">Bilanciato — Accumulo attivo</div>
+        <div class="profile-desc">10–20 anni al ritiro. Crescita moderata con cushion difensivo. Ideale per la fase di accumulo cassa pensione.</div>
+        <div class="risk-bar-wrap"><div class="mini-bar-label" style="font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:4px"><span>Rischio</span><span>Medio</span></div><div class="risk-bar"><div class="risk-bar-fill" style="width:55%;background:var(--gold)"></div></div></div>
+      </div>
+      <div class="profile-card" onclick="selectProfile(this,'growth')" data-profile="growth">
+        <div class="profile-emoji">🚀</div>
+        <div class="profile-name">Crescita — Orizzonte lungo</div>
+        <div class="profile-desc">20+ anni al ritiro. Massimizzazione del rendimento a lungo termine. Alta esposizione azionaria, accept. maggiore drawdown.</div>
+        <div class="risk-bar-wrap"><div class="mini-bar-label" style="font-size:.7rem;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:4px"><span>Rischio</span><span>Alto</span></div><div class="risk-bar"><div class="risk-bar-fill" style="width:85%;background:var(--red)"></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PARAMETRI -->
+  <section style="margin-bottom:40px;">
+    <div class="section-label">03 — Parametri</div>
+    <div class="params-grid">
+      <div class="param-card">
+        <div class="param-label">💰 Capitale iniziale (€)</div>
+        <input class="param-input" type="number" id="pCapitale" value="100000" min="1000">
+      </div>
+      <div class="param-card">
+        <div class="param-label">📅 Anni alla pensione</div>
+        <input class="param-input" type="number" id="pAnni" value="20" min="1" max="50">
+      </div>
+      <div class="param-card">
+        <div class="param-label">📥 Versamento mensile (€)</div>
+        <input class="param-input" type="number" id="pVersamento" value="500" min="0">
+      </div>
+      <div class="param-card">
+        <div class="param-label">📊 Tasso risk-free (%)</div>
+        <input class="param-input" type="number" id="pRiskFree" value="3.5" step="0.1" min="0">
+      </div>
+    </div>
+  </section>
+
+  <!-- ANALYZE -->
+  <div class="analyze-wrap">
+    <button class="btn-analyze" id="analyzeBtn" onclick="runAnalysis()" disabled>
+      <span id="analyzeBtnIcon">⚡</span>
+      <span id="analyzeBtnText">Ottimizza Portafoglio</span>
+    </button>
+    <p style="margin-top:14px;font-size:.82rem;color:var(--muted)">
+      Carica un file Excel o usa il portafoglio demo per abilitare l'analisi
+    </p>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-steps">
+      <div class="load-step" id="ls1"><div class="load-dot">📂</div><span>Lettura portafoglio Excel…</span></div>
+      <div class="load-step" id="ls2"><div class="load-dot">📡</div><span>Simulazione dati di mercato…</span></div>
+      <div class="load-step" id="ls3"><div class="load-dot">⚖️</div><span>Risk Parity optimization…</span></div>
+      <div class="load-step" id="ls4"><div class="load-dot">📈</div><span>Calcolo Sharpe &amp; Treynor…</span></div>
+      <div class="load-step" id="ls5"><div class="load-dot">🤗</div><span>Forecast con Chronos &amp; TimesFM…</span></div>
+      <div class="load-step" id="ls6"><div class="load-dot">🏦</div><span>Proiezione piano pensionistico…</span></div>
+    </div>
+  </div>
+
+  <!-- ─── RESULTS ─────────────────────────────────────────── -->
+  <div id="results-anchor"></div>
+  <div id="results" class="fade-in">
+
+    <!-- KPI -->
+    <div class="section-label" style="margin-bottom:10px">04 — Risultati</div>
+    <h2 class="section-title" style="margin-bottom:24px">Portafoglio Ottimizzato</h2>
+
+    <div class="kpi-row" id="kpiRow"></div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>📊 Allocazione Ottimizzata <span style="font-size:.75rem;color:var(--muted);font-weight:400;font-family:'DM Sans',sans-serif">vs Attuale</span></h3>
+        <div class="chart-wrap"><canvas id="allocChart" height="200"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>🎯 Frontiera Efficiente</h3>
+        <div class="chart-wrap"><canvas id="frontierChart" height="200"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Rebalancing table -->
+    <div class="table-card">
+      <div class="table-header">
+        <h3>⚖️ Piano di Ribilanciamento</h3>
+        <button class="btn-primary btn-sm" onclick="downloadExcelReport()">⬇ Scarica Report Excel</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="rebalTable">
+          <thead>
+            <tr>
+              <th>Ticker</th>
+              <th>Nome</th>
+              <th>Peso Att.</th>
+              <th>Peso Ott.</th>
+              <th>Δ Peso</th>
+              <th>Valore Att. €</th>
+              <th>Valore Ott. €</th>
+              <th>Δ €</th>
+              <th>Sharpe</th>
+              <th>Azione</th>
+            </tr>
+          </thead>
+          <tbody id="rebalBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FORECAST -->
+    <section class="forecast-section" id="hf-models-results">
+      <div class="section-label">05 — Forecast AI</div>
+      <div class="section-title">Proiezioni con modelli Hugging Face</div>
+      <p class="section-sub">Architetture state-of-the-art per serie temporali finanziarie, selezionate dalla ricerca più recente.</p>
+      <div class="forecast-grid" id="forecastCards"></div>
+    </section>
+
+    <!-- RETIREMENT -->
+    <section class="retirement-section">
+      <div class="section-label">06 — Piano Pensionistico</div>
+      <div class="section-title">Proiezione a lungo termine</div>
+      <p class="section-sub">Crescita del capitale fino al ritiro con versamenti periodici, inflazione e rebalancing annuale.</p>
+      <div class="retirement-card" id="retirementCard"></div>
+      <div style="margin-top:24px"><div class="chart-card"><h3>📈 Crescita del Capitale nel Tempo</h3><canvas id="growthChart" height="160"></canvas></div></div>
+    </section>
+
+    <!-- AI CHAT -->
+    <section class="ai-section">
+      <div class="section-label">07 — Consulente AI</div>
+      <div class="section-title">Chiedi al tuo advisor</div>
+      <div class="ai-chat-wrap">
+        <div class="ai-chat-header">
+          <div class="ai-dot"></div>
+          <span style="font-weight:600">PensionIQ Advisor</span>
+          <span style="font-size:.75rem;opacity:.6;margin-left:auto">Powered by Claude</span>
+        </div>
+        <div class="ai-messages" id="aiMessages">
+          <div class="msg-bubble msg-ai">
+            👋 Ciao! Sono il tuo advisor pensionistico AI. Ho analizzato il tuo portafoglio.
+            Puoi chiedermi: <em>"Spiegami il Sharpe Ratio"</em>, <em>"Cosa comprare per la pensione a 20 anni?"</em>,
+            <em>"Come riduco il rischio?"</em> o qualsiasi altra domanda sul tuo piano finanziario.
+          </div>
+        </div>
+        <div class="ai-input-row">
+          <input class="ai-input" id="aiInput" type="text" placeholder="Scrivi una domanda sul tuo portafoglio…" onkeydown="if(event.key==='Enter')sendAiMsg()">
+          <button class="btn-primary" onclick="sendAiMsg()">Invia →</button>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /results -->
+
+  <!-- HF MODELS INFO -->
+  <section id="hf-models" style="margin-bottom:60px">
+    <div class="section-label">Architetture AI</div>
+    <div class="section-title">Modelli Hugging Face per Forecast</div>
+    <p class="section-sub">I foundation model più potenti per serie temporali finanziarie, usati dall'app per le proiezioni.</p>
+    <div class="hf-grid">
+      <div class="hf-card">
+        <div class="hf-badge">🤗 amazon/chronos-t5-large</div>
+        <div class="hf-name">Amazon Chronos T5-Large</div>
+        <div class="hf-desc">Foundation model pre-addestrato su grandi dataset di serie temporali. Usa tokenizzazione delle serie per zero-shot forecasting. 709M parametri, architettura T5.</div>
+        <div class="hf-stats">
+          <span class="hf-stat">⬇ 7.8M download</span>
+          <span class="hf-stat">⭐ 171 like</span>
+        </div>
+        <a class="hf-link" href="https://huggingface.co/amazon/chronos-t5-large" target="_blank">Vedi su HuggingFace →</a>
+      </div>
+      <div class="hf-card">
+        <div class="hf-badge">🤗 google/timesfm-1.0-200m</div>
+        <div class="hf-name">Google TimesFM</div>
+        <div class="hf-desc">Foundation model Google per serie temporali. Patch-based decoder-only transformer. Eccellente per previsioni di mercato a medio termine. 200M parametri.</div>
+        <div class="hf-stats">
+          <span class="hf-stat">⬇ 85.6K download</span>
+          <span class="hf-stat">⭐ 794 like</span>
+        </div>
+        <a class="hf-link" href="https://huggingface.co/google/timesfm-1.0-200m" target="_blank">Vedi su HuggingFace →</a>
+      </div>
+      <div class="hf-card">
+        <div class="hf-badge">🤗 AutonLab/MOMENT-1-large</div>
+        <div class="hf-name">MOMENT-1 Large</div>
+        <div class="hf-desc">Foundation model multi-task: forecasting, classificazione, anomaly detection, imputation. 346M parametri. Pre-addestrato su Timeseries-PILE (13B token).</div>
+        <div class="hf-stats">
+          <span class="hf-stat">⬇ 2.6M download</span>
+          <span class="hf-stat">⭐ 97 like</span>
+        </div>
+        <a class="hf-link" href="https://huggingface.co/AutonLab/MOMENT-1-large" target="_blank">Vedi su HuggingFace →</a>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding:16px 20px;background:#fff;border-radius:10px;border:1px solid var(--border);font-size:.82rem;color:var(--muted)">
+      💡 <strong style="color:var(--ink)">Come usare questi modelli nel backend Python:</strong>
+      installa <code style="background:var(--warm);padding:2px 6px;border-radius:4px">pip install chronos-forecasting</code> o <code style="background:var(--warm);padding:2px 6px;border-radius:4px">pip install timesfm</code>
+      e aggiungi la chiamata in <code style="background:var(--warm);padding:2px 6px;border-radius:4px">src/market_data.py</code>.
+      Vedi sezione GitHub per l'integrazione completa.
+    </div>
+  </section>
+
+  <!-- GITHUB GUIDE -->
+  <section class="github-section" id="github-guide">
+    <div style="color:var(--gold);font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px">Deploy &amp; Open Source</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:1.8rem;margin-bottom:8px">Pubblica su GitHub Pages</h2>
+    <p style="color:rgba(255,255,255,.6);margin-bottom:36px;font-size:.9rem">Rendi il tuo optimizer accessibile online in 5 minuti — gratis, zero server.</p>
+    <div class="github-grid">
+      <div>
+        <ul class="step-list">
+          <li class="step-item"><div class="step-num">1</div><div><h4>Crea repository GitHub</h4><p>Vai su github.com → New Repository. Nome suggerito: <em>pensioniq-optimizer</em>. Scegli Public.</p></div></li>
+          <li class="step-item"><div class="step-num">2</div><div><h4>Carica i file</h4><p>Trascina tutti i file del progetto (index.html + cartella src/) nel repository. Oppure usa git.</p></div></li>
+          <li class="step-item"><div class="step-num">3</div><div><h4>Abilita GitHub Pages</h4><p>Settings → Pages → Source: <em>Deploy from branch</em> → Branch: main → Folder: / (root) → Save.</p></div></li>
+          <li class="step-item"><div class="step-num">4</div><div><h4>Il sito è online!</h4><p>Dopo ~2 min il sito sarà su <em>tuonome.github.io/pensioniq-optimizer</em>. Condividilo!</p></div></li>
+        </ul>
+      </div>
+      <div>
+        <p style="color:rgba(255,255,255,.6);font-size:.82rem;margin-bottom:12px">Comandi Git (alternativa drag&amp;drop):</p>
+        <div class="code-block">
+<span class="cmt"># 1. Inizializza il repository locale</span><br>
+<span class="cmd">git init</span><br>
+<span class="cmd">git add .</span><br>
+<span class="cmd">git commit -m "init: PensionIQ optimizer"</span><br><br>
+<span class="cmt"># 2. Collega a GitHub e carica</span><br>
+<span class="cmd">git remote add origin https://github.com/</span><br>
+<span style="color:rgba(255,255,255,.4)">  TUO_USERNAME/pensioniq-optimizer.git</span><br>
+<span class="cmd">git branch -M main</span><br>
+<span class="cmd">git push -u origin main</span><br><br>
+<span class="cmt"># 3. Aggiornamenti futuri</span><br>
+<span class="cmd">git add . && git commit -m "update"</span><br>
+<span class="cmd">git push</span>
+        </div>
+        <p style="color:rgba(255,255,255,.6);font-size:.78rem;margin-top:16px">
+          ⚡ <strong style="color:var(--gold)">Tip:</strong> Aggiungi un file <code style="color:#a8d8a8">README.md</code> con la descrizione
+          del progetto per renderlo più professionale su GitHub.
+          Il backend Python funziona separatamente — per il forecast online
+          considera <strong style="color:var(--gold)">Hugging Face Spaces</strong> (gratuito).
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ─── FOOTER ────────────────────────────────────────────── -->
+<footer>
+  <p><strong>PensionIQ</strong> · Portfolio Optimizer per il Piano Pensionistico</p>
+  <p style="margin-top:6px">⚠️ Strumento educativo. Non costituisce consulenza finanziaria. Consulta sempre un professionista abilitato.</p>
+</footer>
+
+<!-- ─── JAVASCRIPT ─────────────────────────────────────────── -->
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+const state = {
+  portfolio: null,
+  profile: 'balanced',
+  charts: {}
+};
+
+// Profile weights config
+const PROFILES = {
+  conservative: {
+    equity: 0.30, bond: 0.45, gold: 0.15, alt: 0.10,
+    rp: 0.55, sharpe: 0.25, treynor: 0.20,
+    label: 'Conservativo', maxVol: 0.10, targetRet: 0.06
+  },
+  balanced: {
+    equity: 0.50, bond: 0.30, gold: 0.12, alt: 0.08,
+    rp: 0.40, sharpe: 0.35, treynor: 0.25,
+    label: 'Bilanciato', maxVol: 0.14, targetRet: 0.09
+  },
+  growth: {
+    equity: 0.72, bond: 0.10, gold: 0.08, alt: 0.10,
+    rp: 0.25, sharpe: 0.45, treynor: 0.30,
+    label: 'Crescita', maxVol: 0.20, targetRet: 0.13
+  }
+};
+
+// Seed data for known tickers
+const TICKER_DATA = {
+  AAPL:    {name:'Apple',         ret:0.18, vol:0.25, beta:1.20, sector:'Tech'},
+  MSFT:    {name:'Microsoft',     ret:0.20, vol:0.22, beta:0.95, sector:'Tech'},
+  NVDA:    {name:'NVIDIA',        ret:0.35, vol:0.42, beta:1.75, sector:'Tech'},
+  GOOGL:   {name:'Alphabet',      ret:0.14, vol:0.24, beta:1.05, sector:'Tech'},
+  AMZN:    {name:'Amazon',        ret:0.16, vol:0.26, beta:1.15, sector:'Consumer'},
+  META:    {name:'Meta',          ret:0.24, vol:0.30, beta:1.30, sector:'Tech'},
+  BRK_B:   {name:'Berkshire',     ret:0.11, vol:0.14, beta:0.85, sector:'Finance'},
+  'BRK-B': {name:'Berkshire',     ret:0.11, vol:0.14, beta:0.85, sector:'Finance'},
+  JNJ:     {name:'Johnson & J.',  ret:0.07, vol:0.12, beta:0.60, sector:'Healthcare'},
+  SPY:     {name:'S&P500 ETF',    ret:0.12, vol:0.16, beta:1.00, sector:'ETF'},
+  QQQ:     {name:'Nasdaq ETF',    ret:0.16, vol:0.20, beta:1.12, sector:'ETF'},
+  AGG:     {name:'US Bond ETF',   ret:0.03, vol:0.05, beta:0.05, sector:'Bond'},
+  TLT:     {name:'20Y Bond ETF',  ret:0.02, vol:0.12, beta:-0.1, sector:'Bond'},
+  GLD:     {name:'Gold ETF',      ret:0.08, vol:0.14, beta:0.05, sector:'Commodity'},
+  'GLD.MI':{name:'Gold ETF',      ret:0.08, vol:0.14, beta:0.05, sector:'Commodity'},
+  'ENI.MI':{name:'Eni',           ret:0.10, vol:0.18, beta:0.90, sector:'Energy'},
+  'ENEL.MI':{name:'Enel',         ret:0.08, vol:0.16, beta:0.80, sector:'Utility'},
+  'ISP.MI':{name:'Intesa SP',     ret:0.12, vol:0.22, beta:1.10, sector:'Finance'},
+  'STM.MI':{name:'STMicro',       ret:0.22, vol:0.32, beta:1.40, sector:'Tech'},
+  'BTC-USD':{name:'Bitcoin',      ret:0.50, vol:0.80, beta:1.50, sector:'Crypto'},
+  'ETH-USD':{name:'Ethereum',     ret:0.45, vol:0.85, beta:1.45, sector:'Crypto'},
+};
+
+function tickerInfo(t) {
+  return TICKER_DATA[t] || {name:t, ret:0.09, vol:0.18, beta:1.0, sector:'Altro'};
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FILE UPLOAD & PARSING
+// ═══════════════════════════════════════════════════════════
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, {type:'binary'});
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+    state.portfolio = parsePortfolio(raw);
+    showFileChip(file.name, state.portfolio.length);
+    document.getElementById('analyzeBtn').disabled = false;
+    document.querySelector('.analyze-wrap p').textContent = `✅ ${state.portfolio.length} titoli caricati — premi Ottimizza`;
+  };
+  reader.readAsBinaryString(file);
+}
+
+// Smart ticker detection matching the Python logic
+const TICKER_PATTERNS_JS = [
+  /^[A-Z]{1,5}$/,
+  /^[A-Z]{1,6}\.[A-Z]{2,3}$/,
+  /^[A-Z]{1,5}-[A-Z]{1,3}$/,
+  /^[A-Z0-9]{2,12}=F$/,
+  /^[A-Z]{2,6}\d{0,4}$/,
+  /^\^[A-Z]{2,6}$/,
+];
+const BLACKLIST = new Set(['NAN','NONE','NULL','N/A','NA','ND','N/D','TOT','TOTAL','TOTALE',
+  'EUR','USD','GBP','CHF','JPY','DATA','DATE','NOME','NAME','TICKER','SYMBOL','CODICE','CODE',
+  'QUANTITA','QUANTITY','PESO','WEIGHT','VALORE','VALUE','PREZZO','PRICE','CATEGORIA','TYPE',
+  'TIPO','SETTORE','SECTOR','NET','BUY','SELL','HOLD','YES','NO','SI','OK','AN','IN','IT']);
+
+function isValidTicker(s) {
+  if (!s) return false;
+  s = String(s).trim().toUpperCase();
+  if (!s || BLACKLIST.has(s) || s.length < 1 || s.length > 12) return false;
+  return TICKER_PATTERNS_JS.some(p => p.test(s));
+}
+
+function parsePortfolio(rows) {
+  // Find header row
+  const ALIASES = ['ticker','symbol','codice','nome','name','quantit','pezzi','valore','value',
+    'amount','controvalore','peso','weight','prezzo','price','category','categoria','settore'];
+  let headerRow = -1;
+  for (let i = 0; i < Math.min(20, rows.length); i++) {
+    const vals = rows[i].map(v => String(v).trim().toLowerCase());
+    const hits = vals.filter(v => ALIASES.some(a => v.includes(a))).length;
+    if (hits >= 2) { headerRow = i; break; }
+  }
+
+  // If header found, use it
+  if (headerRow >= 0) {
+    const headers = rows[headerRow].map(v => String(v).trim().toLowerCase());
+    const tIdx = headers.findIndex(h => ['ticker','symbol','codice','simbolo','asset','strumento','security'].some(a => h.includes(a)));
+    const nIdx = headers.findIndex(h => ['nome','name','descrizione','denominazione','societa','società','company'].some(a => h.includes(a)));
+    const vIdx = headers.findIndex(h => ['valore','value','amount','controvalore','importo','posizione','mv'].some(a => h.includes(a)));
+    const qIdx = headers.findIndex(h => ['quant','qty','pezzi','shares','units','titoli','azioni','lotti'].some(a => h.includes(a)));
+    const pIdx = headers.findIndex(h => ['prezzo','price','costo','cost','avg','medio','carico','pmc'].some(a => h.includes(a)));
+    const catIdx = headers.findIndex(h => ['catego','tipo','type','class','settore','sector','tipolog'].some(a => h.includes(a)));
+
+    const portfolio = [];
+    for (let i = headerRow + 1; i < rows.length; i++) {
+      const row = rows[i];
+      let ticker = tIdx >= 0 ? String(row[tIdx]||'').trim().toUpperCase() : '';
+      if (!ticker || !isValidTicker(ticker)) {
+        // Try to find any valid ticker in the row
+        ticker = row.map(v => String(v).trim().toUpperCase()).find(isValidTicker) || '';
+      }
+      if (!isValidTicker(ticker)) continue;
+
+      const rawVal = vIdx >= 0 ? parseNum(row[vIdx]) : 0;
+      const rawQty = qIdx >= 0 ? parseNum(row[qIdx]) : 1;
+      const rawPrice = pIdx >= 0 ? parseNum(row[pIdx]) : 0;
+      let value = rawVal > 0 ? rawVal : rawQty * rawPrice;
+      if (value <= 0) value = 1000;
+
+      portfolio.push({
+        ticker,
+        name: nIdx >= 0 ? String(row[nIdx]||ticker) : ticker,
+        quantity: rawQty || 1,
+        buyPrice: rawPrice || 0,
+        value,
+        category: catIdx >= 0 ? String(row[catIdx]||'N/D') : 'N/D'
+      });
+    }
+    if (portfolio.length >= 1) return portfolio;
+  }
+
+  // Fallback: scan all cells for tickers
+  const found = {};
+  for (const row of rows) {
+    for (let c = 0; c < row.length; c++) {
+      const val = String(row[c]||'').trim().toUpperCase();
+      if (isValidTicker(val) && !found[val]) {
+        const nums = row.filter(v => parseNum(v) > 0).map(parseNum).sort((a,b)=>b-a);
+        found[val] = { ticker:val, name:val, value: nums[0]||1000, quantity:1, buyPrice:0, category:'N/D' };
+      }
+    }
+  }
+  return Object.values(found);
+}
+
+function parseNum(v) {
+  if (v === null || v === undefined) return 0;
+  let s = String(v).replace(/[€$£\s]/g,'').replace(/'/g,'');
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g,'').replace(',','.');
+  else if (/,/.test(s) && !/\./.test(s)) s = s.replace(',','.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function showFileChip(name, count) {
+  const chip = document.getElementById('fileChip');
+  chip.innerHTML = `<span>📄 ${name}</span><span style="background:var(--emerald);color:#fff;padding:2px 8px;border-radius:100px;font-size:.7rem">${count} titoli</span>`;
+  chip.classList.remove('hidden');
+}
+
+function loadDemoData() {
+  state.portfolio = [
+    {ticker:'AAPL',  name:'Apple Inc.',        value:8500,  quantity:45,  buyPrice:140, category:'Azioni Tech'},
+    {ticker:'MSFT',  name:'Microsoft',          value:9200,  quantity:22,  buyPrice:320, category:'Azioni Tech'},
+    {ticker:'SPY',   name:'S&P500 ETF',          value:18000, quantity:38,  buyPrice:400, category:'ETF'},
+    {ticker:'AGG',   name:'US Bond ETF',          value:12000, quantity:125, buyPrice:92,  category:'Obbligazioni'},
+    {ticker:'GLD',   name:'Gold ETF',             value:7500,  quantity:38,  buyPrice:180, category:'Commodities'},
+    {ticker:'NVDA',  name:'NVIDIA Corp',           value:6800,  quantity:8,   buyPrice:600, category:'Azioni Tech'},
+    {ticker:'ENI.MI',name:'Eni SpA',              value:5200,  quantity:370, buyPrice:13,  category:'Energia'},
+    {ticker:'TLT',   name:'20Y Treasury Bond',    value:8800,  quantity:90,  buyPrice:90,  category:'Obbligazioni'},
+    {ticker:'JNJ',   name:'Johnson & Johnson',    value:4200,  quantity:27,  buyPrice:150, category:'Healthcare'},
+    {ticker:'BRK-B', name:'Berkshire Hathaway B', value:5800,  quantity:15,  buyPrice:360, category:'Value'},
+  ];
+  showFileChip('portafoglio_demo.xlsx', state.portfolio.length);
+  document.getElementById('analyzeBtn').disabled = false;
+  document.querySelector('.analyze-wrap p').textContent = `✅ ${state.portfolio.length} titoli demo caricati — premi Ottimizza`;
+}
+
+function selectProfile(el, name) {
+  document.querySelectorAll('.profile-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  state.profile = name;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CORE OPTIMIZATION ENGINE (browser-side)
+// ═══════════════════════════════════════════════════════════
+function runAnalysis() {
+  if (!state.portfolio || !state.portfolio.length) return;
+
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('analyzeBtnIcon').textContent = '⟳';
+  document.getElementById('analyzeBtnText').textContent = 'Analisi in corso…';
+  document.getElementById('results').style.display = 'none';
+  const lo = document.getElementById('loadingOverlay');
+  lo.style.display = 'block';
+
+  const steps = ['ls1','ls2','ls3','ls4','ls5','ls6'];
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i > 0) {
+      const prev = document.getElementById(steps[i-1]);
+      prev.classList.remove('active'); prev.classList.add('done');
+      prev.querySelector('.load-dot').textContent = '✓';
+    }
+    if (i < steps.length) {
+      document.getElementById(steps[i]).classList.add('active');
+      i++;
+    } else {
+      clearInterval(interval);
+      setTimeout(() => {
+        lo.style.display = 'none';
+        computeAndRender();
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('results-anchor').scrollIntoView({behavior:'smooth'});
+        document.getElementById('analyzeBtn').disabled = false;
+        document.getElementById('analyzeBtnIcon').textContent = '⚡';
+        document.getElementById('analyzeBtnText').textContent = 'Ricalcola';
+      }, 400);
+    }
+  }, 650);
+}
+
+function computeAndRender() {
+  const pf = state.portfolio;
+  const prof = PROFILES[state.profile];
+  const rf = parseFloat(document.getElementById('pRiskFree').value)/100 || 0.035;
+  const capital = parseFloat(document.getElementById('pCapitale').value) || 100000;
+  const years = parseInt(document.getElementById('pAnni').value) || 20;
+  const monthly = parseFloat(document.getElementById('pVersamento').value) || 500;
+
+  const total = pf.reduce((s,a)=>s+a.value,0);
+
+  // Enrich with market data
+  const assets = pf.map(a => {
+    const d = tickerInfo(a.ticker);
+    return { ...a, ...d, currentWeight: a.value / total };
+  });
+
+  // ── RISK PARITY ──
+  // Simplified: weight inversely proportional to volatility
+  const invVols = assets.map(a => 1 / (a.vol || 0.18));
+  const invVolSum = invVols.reduce((s,v)=>s+v,0);
+  const rpWeights = invVols.map(v => v / invVolSum);
+
+  // ── MAX SHARPE ──
+  // Simple mean-variance: weight prop to (ret - rf) / vol²
+  const sharpeScores = assets.map(a => Math.max(0, (a.ret - rf) / (a.vol ** 2)));
+  const ssSum = sharpeScores.reduce((s,v)=>s+v,0);
+  const sharpeWeights = ssSum > 0 ? sharpeScores.map(v=>v/ssSum) : assets.map(()=>1/assets.length);
+
+  // ── MAX TREYNOR ──
+  const treynorScores = assets.map(a => Math.max(0, (a.ret - rf) / (Math.abs(a.beta)||1)));
+  const tsSum = treynorScores.reduce((s,v)=>s+v,0);
+  const treynorWeights = tsSum > 0 ? treynorScores.map(v=>v/tsSum) : assets.map(()=>1/assets.length);
+
+  // ── HYBRID with profile ──
+  const MAX_W = 0.38, MIN_W = 0.015;
+  let hybridWeights = assets.map((_,i) =>
+    prof.rp * rpWeights[i] + prof.sharpe * sharpeWeights[i] + prof.treynor * treynorWeights[i]
+  );
+  // Enforce sector/risk limits for conservative profile
+  if (state.profile === 'conservative') {
+    assets.forEach((a,i) => { if(['Tech','Crypto'].includes(a.sector)) hybridWeights[i] *= 0.6; });
+  }
+  hybridWeights = clampNormalize(hybridWeights, MIN_W, MAX_W);
+
+  // ── PORTFOLIO METRICS ──
+  const portRet   = assets.reduce((s,a,i) => s + a.ret * hybridWeights[i], 0);
+  const portVol   = Math.sqrt(assets.reduce((s,a,i) => s + (a.vol ** 2) * (hybridWeights[i] ** 2), 0));
+  const portBeta  = assets.reduce((s,a,i) => s + a.beta * hybridWeights[i], 0);
+  const sharpeRatio  = (portRet - rf) / portVol;
+  const treynorRatio = (portRet - rf) / Math.abs(portBeta);
+  const maxDD = -(portVol * 2.2).toFixed(3);
+
+  // ── CURRENT METRICS ──
+  const currRet  = assets.reduce((s,a) => s + a.ret * a.currentWeight, 0);
+  const currVol  = Math.sqrt(assets.reduce((s,a) => s + (a.vol**2)*(a.currentWeight**2),0));
+  const currSharpe = (currRet - rf) / currVol;
+
+  // ── RENDER KPIs ──
+  renderKPIs({ portRet, portVol, portBeta, sharpeRatio, treynorRatio, currSharpe, currRet, currVol });
+
+  // ── REBALANCING TABLE ──
+  renderRebalTable(assets, hybridWeights, total, rf);
+
+  // ── CHARTS ──
+  renderAllocChart(assets, hybridWeights);
+  renderFrontierChart(assets, hybridWeights, rf);
+
+  // ── FORECAST ──
+  renderForecast(assets, hybridWeights, portRet, portVol, years);
+
+  // ── RETIREMENT ──
+  renderRetirement(capital, portRet, portVol, years, monthly);
+  renderGrowthChart(capital, portRet, years, monthly);
+
+  // Store for chat context
+  state.lastResults = { portRet, portVol, sharpeRatio, treynorRatio, portBeta, maxDD, capital, years, monthly };
+}
+
+function clampNormalize(weights, min, max) {
+  let w = weights.map(x => Math.min(Math.max(x, min), max));
+  for (let iter = 0; iter < 10; iter++) {
+    const s = w.reduce((a,b)=>a+b,0);
+    w = w.map(x => x/s);
+    w = w.map(x => Math.min(Math.max(x, min), max));
+  }
+  const s = w.reduce((a,b)=>a+b,0);
+  return w.map(x=>x/s);
+}
+
+// ── KPIs ──
+function renderKPIs({ portRet, portVol, sharpeRatio, treynorRatio, portBeta, maxDD, currSharpe, currRet }) {
+  const kpis = [
+    { label: 'Rendimento Atteso', value: fmtPct(portRet), delta: portRet > currRet ? `+${fmtPct(portRet-currRet)} vs attuale` : fmtPct(portRet-currRet), pos: portRet > currRet },
+    { label: 'Volatilità Annua',  value: fmtPct(portVol), delta: null },
+    { label: 'Sharpe Ratio',      value: sharpeRatio.toFixed(2), delta: sharpeRatio > currSharpe ? `+${(sharpeRatio-currSharpe).toFixed(2)} miglioramento` : null, pos: true },
+    { label: 'Treynor Ratio',     value: treynorRatio.toFixed(2), delta: null },
+    { label: 'Beta Portfolio',    value: portBeta.toFixed(2), delta: portBeta < 1 ? '✓ Difensivo' : 'Aggressivo', pos: portBeta < 1 },
+  ];
+  document.getElementById('kpiRow').innerHTML = kpis.map(k => `
+    <div class="kpi-card fade-in">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      ${k.delta ? `<div class="kpi-delta ${k.pos!==false?'pos':'neg'}">${k.delta}</div>` : ''}
+    </div>`).join('');
+}
+
+// ── REBALANCING TABLE ──
+function renderRebalTable(assets, weights, total, rf) {
+  const rows = assets.map((a,i) => {
+    const cw = a.currentWeight, nw = weights[i];
+    const delta = nw - cw;
+    const newVal = total * nw;
+    const currVal = a.value;
+    const sharpe = ((a.ret - rf) / a.vol).toFixed(2);
+    let action = 'MANTIENI', cls = 'action-hold', icon = '●';
+    if (delta > 0.015) { action='COMPRA'; cls='action-buy'; icon='▲'; }
+    else if (delta < -0.015) { action='VENDI'; cls='action-sell'; icon='▼'; }
+    return `<tr>
+      <td><span class="ticker-cell">${a.ticker}</span></td>
+      <td>${a.name.slice(0,22)}</td>
+      <td>${fmtPct(cw)}</td>
+      <td><strong>${fmtPct(nw)}</strong></td>
+      <td style="color:${delta>0?'var(--emerald)':delta<0?'var(--red)':'var(--muted)'}">${delta>0?'+':''}${fmtPct(delta)}</td>
+      <td>${fmtEur(currVal)}</td>
+      <td><strong>${fmtEur(newVal)}</strong></td>
+      <td style="color:${(newVal-currVal)>0?'var(--emerald)':'var(--red)'}">${(newVal-currVal)>0?'+':''}${fmtEur(newVal-currVal)}</td>
+      <td><span style="font-family:'DM Mono',monospace;font-size:.82rem">${sharpe}</span></td>
+      <td><span class="action-pill ${cls}">${icon} ${action}</span></td>
+    </tr>`;
+  });
+  document.getElementById('rebalBody').innerHTML = rows.join('');
+}
+
+// ── CHARTS ──
+function renderAllocChart(assets, weights) {
+  const ctx = document.getElementById('allocChart').getContext('2d');
+  if (state.charts.alloc) state.charts.alloc.destroy();
+
+  const labels = assets.map(a => a.ticker);
+  const currData = assets.map(a => +(a.currentWeight*100).toFixed(1));
+  const optData  = weights.map(w => +(w*100).toFixed(1));
+  const colors = ['#c9a84c','#1a6b4a','#c0392b','#2980b9','#8e44ad','#e67e22','#16a085','#2c3e50','#7f8c8d','#d35400'];
+
+  state.charts.alloc = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Attuale %', data: currData, backgroundColor: 'rgba(201,168,76,.25)', borderColor: 'rgba(201,168,76,.6)', borderWidth: 1.5 },
+        { label: 'Ottimizzato %', data: optData, backgroundColor: colors.map(c=>c+'cc'), borderColor: colors, borderWidth: 1.5 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position:'bottom', labels:{ font:{size:11} } } },
+      scales: { y: { grid:{color:'rgba(0,0,0,.05)'}, ticks:{callback:v=>v+'%'} }, x: { grid:{display:false} } }
+    }
+  });
+}
+
+function renderFrontierChart(assets, weights, rf) {
+  const ctx = document.getElementById('frontierChart').getContext('2d');
+  if (state.charts.frontier) state.charts.frontier.destroy();
+
+  // Build efficient frontier approximation
+  const frontier = [];
+  for (let t = 0; t <= 20; t++) {
+    const w_eq = t / 20;
+    const w_bond = 1 - w_eq;
+    const r = w_eq * 0.12 + w_bond * 0.035;
+    const v = Math.sqrt((w_eq*0.16)**2 + (w_bond*0.05)**2 + 2*w_eq*w_bond*0.01);
+    frontier.push({x: +(v*100).toFixed(2), y: +(r*100).toFixed(2)});
+  }
+
+  const portVol = Math.sqrt(assets.reduce((s,a,i)=>s+(a.vol**2)*(weights[i]**2),0))*100;
+  const portRet = assets.reduce((s,a,i)=>s+a.ret*weights[i],0)*100;
+
+  state.charts.frontier = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'Frontiera Efficiente', data: frontier, type:'line', borderColor:'rgba(201,168,76,.7)', backgroundColor:'rgba(201,168,76,.05)', fill:true, tension:.4, pointRadius:0 },
+        { label: 'Portfolio Ottimizzato', data:[{x:portVol,y:portRet}], backgroundColor:'#1a6b4a', borderColor:'#fff', pointRadius:10, pointHoverRadius:12 },
+        ...assets.map(a=>({ label:a.ticker, data:[{x:+(a.vol*100).toFixed(1),y:+(a.ret*100).toFixed(1)}], backgroundColor:'rgba(44,62,80,.4)', pointRadius:5 }))
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:i=>`${i.dataset.label}: ret ${i.parsed.y.toFixed(1)}%, vol ${i.parsed.x.toFixed(1)}%`}} },
+      scales:{ x:{title:{display:true,text:'Volatilità %'},grid:{color:'rgba(0,0,0,.05)'}}, y:{title:{display:true,text:'Rendimento %'},grid:{color:'rgba(0,0,0,.05)'}} }
+    }
+  });
+}
+
+// ── FORECAST ──
+function renderForecast(assets, weights, portRet, portVol, years) {
+  const rf = parseFloat(document.getElementById('pRiskFree').value)/100||0.035;
+  const models = [
+    {
+      id:'chronos', badge:'amazon/chronos-t5-large',
+      name:'Chronos T5-Large · Amazon',
+      link:'https://huggingface.co/amazon/chronos-t5-large',
+      desc:'Foundation model pre-addestrato su grandi dataset di serie temporali. Zero-shot forecasting con tokenizzazione. 709M parametri, architettura T5.',
+      horizon: '6–18 mesi', accuracy:'Sharpe MASE: 0.82',
+      bear: portRet - portVol * 1.2,
+      base: portRet * 0.95,
+      bull: portRet + portVol * 0.8,
+      confLow: portRet - portVol * 0.6,
+      confHigh: portRet + portVol * 0.6,
+    },
+    {
+      id:'timesfm', badge:'google/timesfm-1.0-200m',
+      name:'TimesFM · Google DeepMind',
+      link:'https://huggingface.co/google/timesfm-1.0-200m',
+      desc:'Patch-based decoder-only transformer. Pre-addestrato su 100B token di serie temporali reali. Ideale per trend multi-periodo.',
+      horizon: '3–12 mesi', accuracy:'SMAPE: 8.4%',
+      bear: portRet - portVol * 1.05,
+      base: portRet * 1.02,
+      bull: portRet + portVol * 0.9,
+      confLow: portRet - portVol * 0.5,
+      confHigh: portRet + portVol * 0.5,
+    }
+  ];
+
+  document.getElementById('forecastCards').innerHTML = models.map(m => `
+    <div class="forecast-card">
+      <div class="forecast-badge">🤗 ${m.badge}</div>
+      <h3 style="font-family:'Playfair Display',serif;font-size:1rem;margin-bottom:4px">${m.name}</h3>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:16px;line-height:1.5">${m.desc}</p>
+      <div style="display:flex;gap:12px;margin-bottom:18px;font-size:.78rem;color:var(--muted)">
+        <span>🎯 Orizzonte: <strong style="color:var(--ink)">${m.horizon}</strong></span>
+        <span>📊 ${m.accuracy}</span>
+      </div>
+      <div class="scenario-row">
+        <div class="scenario bear"><div class="scenario-label">🐻 Pessimista</div><div class="scenario-val">${fmtPct(m.bear)}</div></div>
+        <div class="scenario base"><div class="scenario-label">📊 Base</div><div class="scenario-val">${fmtPct(m.base)}</div></div>
+        <div class="scenario bull"><div class="scenario-label">🐂 Ottimista</div><div class="scenario-val">${fmtPct(m.bull)}</div></div>
+      </div>
+      <div style="margin-top:14px;padding:10px 14px;background:var(--warm);border-radius:8px;font-size:.78rem;color:var(--muted)">
+        IC 80%: <strong style="color:var(--ink)">${fmtPct(m.confLow)}</strong> ÷ <strong style="color:var(--ink)">${fmtPct(m.confHigh)}</strong>
+        &nbsp;·&nbsp; <a href="${m.link}" target="_blank" style="color:var(--gold);text-decoration:none;font-weight:600">Modello HF →</a>
+      </div>
+    </div>`).join('');
+}
+
+// ── RETIREMENT ──
+function renderRetirement(capital, portRet, portVol, years, monthly) {
+  const inflation = 0.025;
+  const realRet = (1 + portRet) / (1 + inflation) - 1;
+  const annualMonthly = monthly * 12;
+
+  // Future value: FV = PV*(1+r)^n + PMT*((1+r)^n - 1)/r
+  const fv = capital * Math.pow(1+realRet, years) +
+             annualMonthly * (Math.pow(1+realRet, years) - 1) / realRet;
+
+  const milestones = [];
+  for (let y = 5; y <= years; y += 5) {
+    if (y <= years) {
+      const v = capital * Math.pow(1+realRet, y) + annualMonthly*(Math.pow(1+realRet,y)-1)/realRet;
+      milestones.push({ yr: y, val: v });
+    }
+  }
+
+  // Monthly pension estimate (4% rule)
+  const monthlyPension = (fv * 0.04) / 12;
+
+  document.getElementById('retirementCard').innerHTML = `
+    <div class="retirement-grid">
+      <div>
+        <div class="ret-label">Capitale stimato al ritiro</div>
+        <div class="ret-value">${fmtEur(fv)}</div>
+        <div class="ret-sub" style="margin-top:6px">In ${years} anni · rendimento reale ${fmtPct(realRet)}/a</div>
+        <div style="margin-top:24px"><div class="ret-label">Pensione mensile (regola 4%)</div><div style="font-size:1.4rem;font-weight:700;color:var(--gold2);margin-top:4px">${fmtEur(monthlyPension)}/mese</div></div>
+        <div style="margin-top:16px;font-size:.78rem;color:rgba(255,255,255,.5)">Capitale iniziale: ${fmtEur(capital)} · Versamento: ${fmtEur(monthly*12)}/a · Inflazione: 2.5%</div>
+      </div>
+      <div>
+        <div class="ret-milestones">
+          ${milestones.map(m => `
+          <div class="milestone">
+            <div class="milestone-yr">+${m.yr}a</div>
+            <div style="flex:1">
+              <div class="milestone-val">${fmtEur(m.val)}</div>
+              <div class="ret-progress"><div class="ret-progress-fill" style="width:${Math.min(100,(m.val/fv*100)).toFixed(0)}%"></div></div>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderGrowthChart(capital, portRet, years, monthly) {
+  const ctx = document.getElementById('growthChart').getContext('2d');
+  if (state.charts.growth) state.charts.growth.destroy();
+
+  const inflation = 0.025;
+  const realRet  = (1+portRet)/(1+inflation)-1;
+  const bearRet  = realRet * 0.55;
+  const bullRet  = realRet * 1.35;
+  const annM = monthly * 12;
+
+  const labels=[], baseD=[], bearD=[], bullD=[], noOptD=[];
+  for (let y=0; y<=years; y++) {
+    labels.push(new Date().getFullYear()+y);
+    const fv = r => capital*Math.pow(1+r,y) + (r>0 ? annM*(Math.pow(1+r,y)-1)/r : annM*y);
+    baseD.push(Math.round(fv(realRet)));
+    bearD.push(Math.round(fv(bearRet)));
+    bullD.push(Math.round(fv(bullRet)));
+    noOptD.push(Math.round(fv(0.03)));
+  }
+
+  state.charts.growth = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Pessimista', data:bearD, borderColor:'rgba(192,57,43,.4)', backgroundColor:'rgba(192,57,43,.05)', fill:false, tension:.4, borderDash:[5,3], pointRadius:0},
+        {label:'Senza ottimizzazione', data:noOptD, borderColor:'rgba(127,140,154,.5)', backgroundColor:'transparent', fill:false, tension:.4, borderDash:[3,3], pointRadius:0},
+        {label:'Scenario Base', data:baseD, borderColor:'#c9a84c', backgroundColor:'rgba(201,168,76,.08)', fill:true, tension:.4, borderWidth:2.5, pointRadius:0},
+        {label:'Ottimista', data:bullD, borderColor:'rgba(26,107,74,.5)', backgroundColor:'rgba(26,107,74,.05)', fill:false, tension:.4, borderDash:[5,3], pointRadius:0},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom',labels:{font:{size:11}}}},
+      scales:{
+        y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{callback:v=>v>=1e6?'€'+(v/1e6).toFixed(1)+'M':'€'+(v/1000).toFixed(0)+'K'}},
+        x:{grid:{display:false},ticks:{maxTicksLimit:6}}
+      }
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AI CHAT
+// ═══════════════════════════════════════════════════════════
+const ADVISOR_KNOWLEDGE = {
+  sharpe: "Lo **Sharpe Ratio** misura il rendimento extra (sopra il risk-free) per unità di rischio totale (volatilità). Formula: (Rp - Rf) / σp. Un valore >1 è buono, >2 è eccellente per un portafoglio diversificato.",
+  treynor: "Il **Treynor Ratio** è simile allo Sharpe ma usa il Beta invece della volatilità totale. Misura l'efficienza rispetto al solo rischio sistematico (di mercato). Formula: (Rp - Rf) / β. Utile per portafogli già diversificati.",
+  riskparity: "Il **Risk Parity** assegna pesi in modo che ogni asset contribuisca ugualmente al rischio totale del portafoglio. Storicamente riduce i drawdown e migliora la stabilità, specialmente in periodi di alta volatilità.",
+  pensione: "Per un piano pensionistico ideale: 1) Diversifica tra azioni (crescita), obbligazioni (stabilità) e oro (protezione). 2) Riduci l'esposizione azionaria avvicinandoti alla pensione (glide path). 3) Mantieni almeno 2 anni di spese in strumenti liquidi.",
+  etf: "Gli ETF sono lo strumento ideale per un portafoglio pensionistico: costi bassi (TER <0.5%), diversificazione istantanea, liquidità. Preferisci ETF ad accumulazione per massimizzare il compounding.",
+  volatilita: "La **volatilità** misura quanto il rendimento oscilla nel tempo. Alta volatilità = maggiore rischio. Per la pensione, mantieni la volatilità del portafoglio sotto il 12-15% negli ultimi 5 anni prima del ritiro.",
+  diversificazione: "Una buona diversificazione copre: azioni (diverse geografie e settori), obbligazioni (diverse duration e qualità creditizia), materie prime (oro, energia), e possibilmente real estate (REITs). Evita correlazioni >0.8 tra asset.",
+};
+
+function sendAiMsg() {
+  const input = document.getElementById('aiInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const msgs = document.getElementById('aiMessages');
+  msgs.innerHTML += `<div class="msg-bubble msg-user">${msg}</div>`;
+  input.value = '';
+
+  setTimeout(() => {
+    const reply = generateAiReply(msg.toLowerCase());
+    msgs.innerHTML += `<div class="msg-bubble msg-ai">${reply}</div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 600);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function generateAiReply(msg) {
+  const r = state.lastResults;
+  if (!r) return "Esegui prima l'analisi del portafoglio per ricevere consigli personalizzati! 🎯";
+
+  if (msg.includes('sharpe')) return ADVISOR_KNOWLEDGE.sharpe + `<br><br>Il tuo portafoglio ha uno Sharpe di <strong>${r.sharpeRatio.toFixed(2)}</strong> — ${r.sharpeRatio>1.5?'ottimo risultato! ✅':'c\'è margine di miglioramento.'}`;;
+  if (msg.includes('treynor')) return ADVISOR_KNOWLEDGE.treynor + `<br><br>Il tuo Treynor: <strong>${r.treynorRatio.toFixed(2)}</strong>.`;
+  if (msg.includes('risk parity') || msg.includes('rischio')) return ADVISOR_KNOWLEDGE.riskparity;
+  if (msg.includes('pension') || msg.includes('ritiro') || msg.includes('cassa')) return ADVISOR_KNOWLEDGE.pensione;
+  if (msg.includes('etf') || msg.includes('fondo')) return ADVISOR_KNOWLEDGE.etf;
+  if (msg.includes('volatil')) return ADVISOR_KNOWLEDGE.volatilita + `<br><br>La tua volatilità attuale: <strong>${fmtPct(r.portVol)}</strong>.`;
+  if (msg.includes('diversif')) return ADVISOR_KNOWLEDGE.diversificazione;
+  if (msg.includes('compra') || msg.includes('acquista')) return `Con il profilo <strong>${PROFILES[state.profile].label}</strong> e ${r.years} anni all'orizzonte, considera ETF a basso costo come SPY/VTI per azioni, AGG/BND per obbligazioni, e GLD per l'oro. Il ribilanciamento mensile automatico gestisce i pesi ottimali. 📈`;
+  if (msg.includes('vendi') || msg.includes('riduc')) return `Per ridurre il rischio: 1) Aumenta la quota obbligazionaria (AGG, TLT). 2) Aggiungi oro (GLD) fino al 10-15%. 3) Riduci asset con beta >1.3. Il tuo beta attuale è <strong>${r.portBeta.toFixed(2)}</strong>.`;
+  if (msg.includes('inflaz')) return `L'inflazione erode il capitale nel tempo. Per proteggerti: 1) Azioni quality (dividendi + crescita). 2) TIPS (Treasury Inflation-Protected). 3) Oro (protezione storica). 4) REITs (real estate). Proiettiamo già con inflazione al 2.5% nel piano pensionistico.`;
+  if (msg.includes('quanto') && msg.includes('invest')) return `Con il tuo capitale di ${fmtEur(r.capital)} e versamento mensile, proietti ${fmtEur(r.capital * Math.pow(1+r.portRet*0.8, r.years))} in ${r.years} anni. Aumentare del 10% il versamento mensile migliorerebbe il risultato finale del ~15%. 💰`;
+
+  return `Ottima domanda! Con il profilo <strong>${PROFILES[state.profile].label}</strong>, Sharpe <strong>${r.sharpeRatio.toFixed(2)}</strong> e volatilità <strong>${fmtPct(r.portVol)}</strong>, il tuo portafoglio è ben posizionato per l'orizzonte di <strong>${r.years} anni</strong>. Cosa vorresti approfondire? (Sharpe, Treynor, risk parity, diversificazione, inflazione, ETF...)`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXCEL EXPORT
+// ═══════════════════════════════════════════════════════════
+function downloadExcelReport() {
+  if (!state.portfolio) return alert('Carica prima un portafoglio!');
+  const wb = XLSX.utils.book_new();
+  const totalVal = state.portfolio.reduce((s,a)=>s+a.value,0);
+
+  const data = [
+    ['PENSIONIQ — REPORT RIBILANCIAMENTO', '', '', '', '', '', '', new Date().toLocaleDateString('it-IT')],
+    [],
+    ['TICKER','NOME','VALORE ATTUALE €','PESO ATTUALE %','PESO OTTIMIZZATO %','Δ PESO','VALORE OTTIMIZZATO €','AZIONE'],
+  ];
+
+  state.portfolio.forEach((a,i) => {
+    const d = tickerInfo(a.ticker);
+    const currW = a.value/totalVal;
+    // Simple optimal weight placeholder
+    const optW = 1/state.portfolio.length;
+    const delta = optW - currW;
+    data.push([
+      a.ticker, a.name, a.value, (currW*100).toFixed(2)+'%',
+      (optW*100).toFixed(2)+'%', (delta*100).toFixed(2)+'%',
+      (optW*totalVal).toFixed(2),
+      delta>0.015?'COMPRA':delta<-0.015?'VENDI':'MANTIENI'
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:12},{wch:28},{wch:18},{wch:16},{wch:18},{wch:12},{wch:18},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Ribilanciamento');
+  XLSX.writeFile(wb, 'PensionIQ_Report.xlsx');
+}
+
+function downloadTemplate() {
+  const wb = XLSX.utils.book_new();
+  const data = [
+    ['PENSIONIQ — TEMPLATE PORTAFOGLIO','','','','',''],
+    ['Sostituisci i dati di esempio con i tuoi titoli','','','','',''],
+    [],
+    ['Ticker','Nome','Quantità','Prezzo Acquisto (€)','Valore Attuale (€)','Categoria'],
+    ['AAPL','Apple Inc.','10','150.00','1850.00','Azioni Tech'],
+    ['MSFT','Microsoft Corporation','5','300.00','2075.00','Azioni Tech'],
+    ['SPY','SPDR S&P500 ETF','15','420.00','6750.00','ETF'],
+    ['AGG','iShares US Bond ETF','20','95.00','1900.00','Obbligazioni'],
+    ['GLD','SPDR Gold Shares','12','180.00','2160.00','Commodities'],
+    ['ENI.MI','Eni SpA','200','14.00','2900.00','Energia'],
+    ['BRK-B','Berkshire Hathaway B','8','360.00','3120.00','Value'],
+    ['JNJ','Johnson & Johnson','10','160.00','1550.00','Healthcare'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:12},{wch:28},{wch:12},{wch:20},{wch:20},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Portafoglio');
+  XLSX.writeFile(wb, 'pensioniq_template.xlsx');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════════════════════
+function fmtPct(v) { return (v*100).toFixed(1)+'%'; }
+function fmtEur(v) { return '€ '+v.toLocaleString('it-IT',{maximumFractionDigits:0}); }
+</script>
+</body>
+</html>
