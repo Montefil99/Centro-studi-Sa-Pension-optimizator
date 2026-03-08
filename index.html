@@ -1306,7 +1306,8 @@ async function fetchYahooQuote(ticker) {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yfTicker)}?range=1d&interval=1d&includePrePost=false`;
     const res = await fetch(url, {
       headers: {'Accept': 'application/json'},
-      signal: AbortSignal.timeout(5000)
+      // AbortSignal.timeout: Chrome 103+, Firefox 100+, Safari 15.4+. Fallback sicuro su browser vecchi.
+      signal: typeof AbortSignal?.timeout === 'function' ? AbortSignal.timeout(5000) : undefined
     });
     if(!res.ok) return null;
     const data = await res.json();
