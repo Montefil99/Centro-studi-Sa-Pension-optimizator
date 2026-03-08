@@ -569,9 +569,9 @@ footer strong{color:#cc2200}
 <div class="api-bar">
   <div class="api-bar-inner">
     <div class="api-field">
-      <span class="api-label">OpenAI</span>
-      <div class="api-dot" id="dotOAI"></div>
-      <input class="api-input" type="password" id="keyOAI" placeholder="sk-proj-… (incolla la tua chiave)" oninput="testOAIKey()">
+      <span class="api-label">Claude (Anthropic)</span>
+      <div class="api-dot" id="dotClaude"></div>
+      <input class="api-input" type="password" id="keyClaude" placeholder="sk-ant-… (Anthropic API key)" oninput="testClaudeKey()">
     </div>
     <div class="api-field">
       <span class="api-label">Alpha Vantage</span>
@@ -833,7 +833,7 @@ footer strong{color:#cc2200}
     <li class="load-item" id="ls6"><div class="load-ic">🏛️</div><span>Ottimizzazione fiscale IT/CH (dividendi, plusvalenze)</span></li>
     <li class="load-item" id="ls7"><div class="load-ic">&#x1F4CA;</div><span>Monte Carlo 5.000 simulazioni GBM · Stress Test storici</span></li>
     <li class="load-item" id="ls8"><div class="load-ic">&#x1F3E6;</div><span>Analisi bond: duration, convexity · VaR/CVaR · macro live</span></li>
-    <li class="load-item" id="ls9"><div class="load-ic">🤖</div><span>Analisi AI con OpenAI GPT (contesto portafoglio)</span></li>
+    <li class="load-item" id="ls9"><div class="load-ic">🤖</div><span>Analisi AI con Claude Opus 4.6 + web search in tempo reale</span></li>
   </ul>
 </div>
 
@@ -1160,7 +1160,7 @@ const S = {
   country: 'IT',
   charts: {},
   results: null,
-  oaiKey: '',
+  claudeKey: '',
   avKey: '',
   costCounter: 0
 };
@@ -1213,11 +1213,12 @@ function td(t){return TD[t]||{n:t,r:.09,v:.18,b:1.0,dy:.015,pe:15,s:'Altro',fcf:
 // ──────────────────────────────────────────────
 //  API KEY MANAGEMENT
 // ──────────────────────────────────────────────
-function testOAIKey(){
-  const k=document.getElementById('keyOAI').value.trim();
-  S.oaiKey=k;
-  const dot=document.getElementById('dotOAI');
-  dot.className='api-dot '+(k.startsWith('sk-')&&k.length>30?'ok':'err');
+function testClaudeKey(){
+  const k=document.getElementById('keyClaude').value.trim();
+  S.claudeKey=k;
+  const dot=document.getElementById('dotClaude');
+  // Anthropic keys begin with sk-ant-
+  dot.className='api-dot '+(k.startsWith('sk-ant-')&&k.length>30?'ok':'err');
 }
 function testAVKey(){
   const k=document.getElementById('keyAV').value.trim();
@@ -1289,6 +1290,72 @@ function getCurrencyRisk(ticker, clientCountry) {
   const key1 = assetCcy+'-'+clientCcy, key2 = clientCcy+'-'+assetCcy;
   const fxV = fxVol[key1] || fxVol[key2] || 0.08;
   return {risk:fxV, label:`Rischio FX ${assetCcy}/${clientCcy}: ±${(fxV*100).toFixed(0)}%/a`, ccy:assetCcy};
+}
+
+// ═══════════════════════════════════════════════════════════
+//  YAHOO FINANCE — quotazioni real-time senza API key
+//  Endpoint pubblico v8 chart API (nessun rate limit fisso)
+// ═══════════════════════════════════════════════════════════
+const _yfCache = {};
+async function fetchYahooQuote(ticker) {
+  if(_yfCache[ticker] && Date.now()-_yfCache[ticker]._ts < 120000) return _yfCache[ticker];
+  // Normalizza ticker per Yahoo (es. ISP.MI → ISP.MI, ENI.MI → ENI.MI)
+  const yfTicker = ticker.replace(/\./g,'.').toUpperCase();
+  try {
+    // Yahoo Finance v8 chart — restituisce OHLCV + metadata
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yfTicker)}?range=1d&interval=1d&includePrePost=false`;
+    const res = await fetch(url, {
+      headers: {'Accept': 'application/json'},
+      signal: AbortSignal.timeout(5000)
+    });
+    if(!res.ok) return null;
+    const data = await res.json();
+    const result = data?.chart?.result?.[0];
+    if(!result) return null;
+
+    const meta = result.meta || {};
+    const quote = {
+      price:       meta.regularMarketPrice  || null,
+      prevClose:   meta.chartPreviousClose  || meta.previousClose || null,
+      currency:    meta.currency            || 'USD',
+      name:        meta.shortName           || meta.longName || ticker,
+      exchange:    meta.exchangeName        || '',
+      marketState: meta.marketState         || 'CLOSED',
+      fiftyTwoWkHigh: meta.fiftyTwoWeekHigh || null,
+      fiftyTwoWkLow:  meta.fiftyTwoWeekLow  || null,
+      changePct:   meta.regularMarketPrice && meta.chartPreviousClose
+                    ? (meta.regularMarketPrice - meta.chartPreviousClose) / meta.chartPreviousClose * 100
+                    : null,
+      _ts: Date.now()
+    };
+    _yfCache[ticker] = quote;
+    return quote;
+  } catch(e) {
+    console.warn('Yahoo Finance fetch error:', ticker, e.message||e);
+    return null;
+  }
+}
+
+// Arricchisce il portafoglio con prezzi Yahoo quando AV non disponibile
+async function enrichPortfolioYahoo(assets) {
+  const noPrice = assets.filter(a => !a.livePrice || a.livePrice === 0);
+  if(!noPrice.length) return;
+  await Promise.allSettled(noPrice.map(async a => {
+    const q = await fetchYahooQuote(a.ticker);
+    if(q?.price) {
+      a.livePrice  = q.price;
+      a.changePct  = q.changePct;
+      a.currency   = q.currency;
+      a._yfSource  = true;
+      // Aggiorna database temporaneo
+      if(TD[a.ticker]) {
+        TD[a.ticker]._live      = true;
+        TD[a.ticker].livePrice  = q.price;
+        TD[a.ticker].changePct  = q.changePct;
+        TD[a.ticker]._liveTs    = Date.now();
+      }
+    }
+  }));
 }
 
 async function fetchAV(ticker){
@@ -2107,15 +2174,29 @@ function buildResults(){
     return s + (b.analysis.modDuration * w);
   }, 0);
   
-  // ── AV News Sentiment (if key available, fetch for top 3 holdings)
-  // Don't await here — let it run async and update UI
-  if(S.avKey) {
-    const top3 = assets.slice().sort((a,b)=>hybrid[assets.indexOf(b)]-hybrid[assets.indexOf(a)]).slice(0,3);
-    top3.forEach(a => {
+  // ── Sentiment notizie sui top 3 asset del portafoglio
+  // Claude + web_search se disponibile, altrimenti AV (senza await, aggiornamento asincrono)
+  const top3assets = assets.slice().sort((a,b)=>hybrid[assets.indexOf(b)]-hybrid[assets.indexOf(a)]).slice(0,3);
+  if(S.claudeKey) {
+    // Claude Opus 4.6 con web_search (fonti real-time: Reuters, Bloomberg, FT)
+    top3assets.forEach(a => {
+      const dInfo = td(a.ticker);
+      getTickerNewsSentiment(a.ticker, dInfo.n||a.name||a.ticker).then(sent => {
+        if(sent) { a._sentiment = sent; }
+      });
+    });
+  } else if(S.avKey) {
+    // Fallback: Alpha Vantage News Sentiment API
+    top3assets.forEach(a => {
       fetchNewsSentimentAV(a.ticker).then(sent => {
         if(sent) { a._sentiment = sent; }
       });
     });
+  }
+
+  // ── Yahoo Finance: arricchisce prezzi per asset senza quotazione AV
+  if(!S.avKey && assets.length) {
+    enrichPortfolioYahoo(assets).catch(()=>{});
   }
   
   S.results={pf,assets,hybrid,prof,rf,capital,anni,annualVers,versamento,rendTarget,
@@ -2536,7 +2617,7 @@ function renderResults(R){
 
   // Update chat context
   document.getElementById('aiModel').textContent=
-    S.oaiKey?'Powered by GPT-4o':'Advisor AI (aggiungi OpenAI key per GPT-4o)';
+    S.claudeKey?'Powered by Claude Opus 4.6 (Anthropic)':'Advisor AI locale (aggiungi chiave Anthropic per Claude Opus 4.6)';
 }
 
 // ── CHARTS ──
@@ -2832,7 +2913,7 @@ function renderForecast(R){
 }
 
 // ──────────────────────────────────────────────
-//  AI CHAT — OpenAI GPT-4o + fallback locale
+//  AI CHAT — Claude Opus 4.6 (Anthropic) + fallback locale
 // ──────────────────────────────────────────────
 const KNOWLEDGE={
   sharpe:`Lo **Sharpe Ratio** misura il rendimento extra per unità di rischio totale (volatilità). Formula: (Rp−Rf)/σp. >1 è buono, >2 eccellente per un portafoglio diversificato.`,
@@ -2855,8 +2936,8 @@ async function sendChat(){
   inp.value='';msgs.scrollTop=msgs.scrollHeight;
 
   let reply;
-  if(S.oaiKey&&S.results){
-    reply=await callGPT(msg);
+  if(S.claudeKey&&S.results){
+    reply=await callClaude(msg);
   } else {
     reply=localAdvisor(msg.toLowerCase());
   }
@@ -2864,34 +2945,52 @@ async function sendChat(){
   msgs.scrollTop=msgs.scrollHeight;
 }
 
-// ─── Fetch news & sentiment for a ticker via OpenAI web_search ───
+// ─── Fetch news & sentiment via Claude Opus 4.6 + web_search_20260209 ───
+// Usa il web search tool nativo di Anthropic per dati aggiornati in tempo reale
 async function getTickerNewsSentiment(ticker, companyName) {
-  if(!S.openaiKey) return null;
-  try {
-    const prompt = `Sei un analista finanziario. Cerca le ultime notizie su ${companyName} (${ticker}) degli ultimi 7 giorni. 
-Rispondi in JSON con questa struttura esatta:
-{"sentiment":"bullish"|"bearish"|"neutral","score":0-100,"headlines":[{"title":"...","impact":"positivo"|"negativo"|"neutro"}],"summary":"2 righe","catalysts":["..."]}
-Solo JSON, niente altro.`;
+  if(!S.claudeKey) return null;
 
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(S.openaiKey||S.oaiKey)},
+  const today = new Date().toLocaleDateString('it-IT');
+  const prompt = `Oggi è ${today}. Analizza le ultime notizie finanziarie su ${companyName} (ticker: ${ticker}).
+
+Cerca:
+1. Ultime notizie degli ultimi 7 giorni (Reuters, Bloomberg, Il Sole 24 Ore, Financial Times, Corriere)
+2. Risultati trimestrali o guidance recenti
+3. Movimenti significativi del titolo
+4. Rating degli analisti (Buy/Hold/Sell) più recenti
+
+Rispondi ESCLUSIVAMENTE con questo JSON valido (nessun testo prima o dopo):
+{"sentiment":"bullish","score":72,"headlines":[{"title":"titolo notizia","impact":"positivo","source":"Bloomberg","date":"gg/mm"},{"title":"altra notizia","impact":"negativo","source":"Reuters","date":"gg/mm"}],"summary":"Sintesi del sentiment in 2 righe concise basata sui fatti trovati.","catalysts":["Catalizzatore 1","Catalizzatore 2"],"analystRating":"Buy","priceTarget":null}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': S.claudeKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
-        model: 'gpt-4o',
-        max_tokens: 500,
-        messages: [
-          {role:'system', content:'Sei un analista finanziario. Rispondi solo in JSON valido.'},
-          {role:'user', content: prompt}
-        ],
-        tools: [{type:'web_search_preview'}]
+        model: 'claude-opus-4-6',
+        max_tokens: 1024,
+        tools: [{type:'web_search_20260209', name:'web_search'}],
+        system: 'Sei un analista finanziario esperto. Usa il web search per trovare notizie aggiornate. Rispondi SOLO con JSON valido, zero testo aggiuntivo.',
+        messages: [{role:'user', content: prompt}]
       })
     });
     const data = await res.json();
-    const text = data.content?.find?.(b=>b.type==='text')?.text || data.choices?.[0]?.message?.content || '';
-    const clean = text.replace(/```json|```/g,'').trim();
-    return JSON.parse(clean);
+    if(data.error) { console.warn('Claude news error:', data.error.message); return null; }
+    // Estrai il blocco text dall'ultima risposta (dopo il tool use)
+    const textBlock = (data.content||[]).filter(b=>b.type==='text').pop();
+    if(!textBlock?.text) return null;
+    // Pulizia robusta: estrai solo il JSON
+    const cleaned = textBlock.text.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) return null;
+    return JSON.parse(jsonMatch[0]);
   } catch(e) {
-    console.warn('News sentiment failed:', e.message);
+    console.warn('News sentiment failed:', e.message||e);
     return null;
   }
 }
@@ -2912,85 +3011,137 @@ async function showTickerNews(ticker, evt) {
   const sy = window.scrollY;
   window.scrollTo({top:sy, behavior:'instant'});
   
-  // Fetch live + sentiment
-  const [liveData, sentiment] = await Promise.all([
+  // Fetch live da Alpha Vantage + Yahoo Finance (fallback) + sentiment Claude
+  const [liveData, yfData, sentiment] = await Promise.all([
     fetchAVFull(ticker),
+    fetchYahooQuote(ticker),
     getTickerNewsSentiment(ticker, d.n||ticker)
   ]);
-  
+
+  // Merge fonti: AV ha priorità, Yahoo come fallback per prezzo
   const ld = liveData || d;
+  if(!ld.livePrice && yfData?.price) {
+    ld.livePrice  = yfData.price;
+    ld.changePct  = yfData.changePct;
+    ld.currency   = yfData.currency || ld.currency;
+    ld._src       = 'Yahoo Finance';
+  }
   const sColor = sentiment?.sentiment==='bullish'?'#2e7d32':sentiment?.sentiment==='bearish'?'#c0392b':'#888';
   const sIcon = sentiment?.sentiment==='bullish'?'▲':sentiment?.sentiment==='bearish'?'▼':'–';
   
+  // Badge fonte dati
+  const priceSrc = ld._src ? `<span style="font-size:.6rem;color:#888;margin-left:4px">(${ld._src})</span>` : (S.avKey ? '<span style="font-size:.6rem;color:#888;margin-left:4px">(Alpha Vantage)</span>' : '<span style="font-size:.6rem;color:#888;margin-left:4px">(Yahoo Finance)</span>');
+  const ratingBadge = sentiment?.analystRating ? `<div style="margin-top:6px;font-size:.7rem;background:${sentiment.analystRating==='Buy'?'#e8f5e9':sentiment.analystRating==='Sell'?'#fdecea':'#f5f5f5'};color:${sentiment.analystRating==='Buy'?'#2e7d32':sentiment.analystRating==='Sell'?'#c0392b':'#555'};padding:3px 8px;border-radius:4px;display:inline-block;font-weight:700">Consensus: ${sentiment.analystRating}</div>` : '';
+  const priceTargetBadge = sentiment?.priceTarget ? `<div style="font-size:.7rem;color:var(--muted);margin-top:3px">Target analisti: <strong>${sentiment.priceTarget}</strong></div>` : '';
+
   content.innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
       <div style="background:#f8f9fa;border-radius:8px;padding:14px">
-        <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Dati live</div>
-        <div style="font-size:1.4rem;font-weight:700;color:var(--navy)">${ld.livePrice>0?ld.livePrice.toFixed(2):'N/D'} <span style="font-size:.75rem;color:var(--muted)">${ld.fxRisk?.ccy||''}</span></div>
-        <div style="font-size:.8rem;color:${(ld.changePct||0)>=0?'#2e7d32':'#c0392b'};font-weight:600">${(ld.changePct||0)>=0?'+':''}${(ld.changePct||0).toFixed(2)}% oggi</div>
-        <div style="margin-top:8px;font-size:.75rem;color:var(--muted)">PE: ${ld.pe||'—'} · DY: ${((ld.dy||0)*100).toFixed(1)}% · β: ${(ld.b||1).toFixed(2)}</div>
+        <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Quotazione ${priceSrc}</div>
+        <div style="font-size:1.4rem;font-weight:700;color:var(--navy)">${ld.livePrice>0?ld.livePrice.toFixed(2):'N/D'} <span style="font-size:.75rem;color:var(--muted)">${ld.currency||ld.fxRisk?.ccy||''}</span></div>
+        <div style="font-size:.8rem;color:${(ld.changePct||0)>=0?'#2e7d32':'#c0392b'};font-weight:600">${ld.changePct!=null?(((ld.changePct||0)>=0?'+':'')+(ld.changePct||0).toFixed(2)+'% oggi'):'variazione N/D'}</div>
+        <div style="margin-top:8px;font-size:.75rem;color:var(--muted)">P/E: ${ld.pe||'—'} · Div. Yield: ${((ld.dy||0)*100).toFixed(1)}% · β: ${(ld.b||1).toFixed(2)}</div>
+        ${ratingBadge}${priceTargetBadge}
         ${ld.fxRisk?.risk>0?`<div style="margin-top:6px;font-size:.7rem;background:#fff3e0;color:#e65100;padding:3px 8px;border-radius:4px">FX risk: ${ld.fxRisk.label}</div>`:''}
       </div>
       <div style="background:#f8f9fa;border-radius:8px;padding:14px">
-        <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Sentiment AI</div>
+        <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Sentiment AI <span style="font-size:.6rem;color:#888">(Claude + web)</span></div>
         ${sentiment ? `
           <div style="font-size:1.2rem;font-weight:700;color:${sColor}">${sIcon} ${(sentiment.sentiment||'').toUpperCase()}</div>
           <div style="margin:6px 0">
             <div style="background:#eee;border-radius:4px;height:6px;overflow:hidden">
-              <div style="background:${sColor};height:100%;width:${sentiment.score}%;transition:width .5s"></div>
+              <div style="background:${sColor};height:100%;width:${Math.min(100,Math.max(0,sentiment.score||0))}%;transition:width .5s"></div>
             </div>
             <div style="font-size:.7rem;color:var(--muted);margin-top:3px">Score: ${sentiment.score}/100</div>
           </div>
-          <div style="font-size:.75rem;color:var(--text2);line-height:1.4">${sentiment.summary||''}</div>
-        ` : `<div style="color:var(--muted);font-size:.8rem">${S.openaiKey?'Nessun dato disponibile':'Configura OpenAI per sentiment'}</div>`}
+          <div style="font-size:.75rem;color:var(--text2);line-height:1.4">${escH(sentiment.summary||'')}</div>
+        ` : `<div style="color:var(--muted);font-size:.8rem">${S.claudeKey?'Nessun dato disponibile da web search':'Configura Claude API per sentiment in tempo reale'}</div>`}
       </div>
     </div>
     ${sentiment?.headlines?.length ? `
     <div style="margin-bottom:12px">
-      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--navy);margin-bottom:8px">Ultime notizie</div>
+      <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--navy);margin-bottom:8px">Ultime notizie <span style="font-weight:400;color:var(--muted)">(fonti: Reuters, Bloomberg, Il Sole 24 Ore…)</span></div>
       ${sentiment.headlines.map(h=>`
         <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--parchment)">
           <span style="flex-shrink:0;font-size:.7rem;padding:2px 6px;border-radius:3px;font-weight:700;background:${h.impact==='positivo'?'#e8f5e9':h.impact==='negativo'?'#fdecea':'#f5f5f5'};color:${h.impact==='positivo'?'#2e7d32':h.impact==='negativo'?'#c0392b':'#888'}">${h.impact==='positivo'?'+':h.impact==='negativo'?'-':'='}</span>
-          <span style="font-size:.78rem;line-height:1.4;color:var(--text)">${h.title}</span>
+          <div style="flex:1">
+            <span style="font-size:.78rem;line-height:1.4;color:var(--text)">${escH(h.title||'')}</span>
+            ${h.source||h.date?`<div style="font-size:.65rem;color:var(--muted);margin-top:2px">${[h.source,h.date].filter(Boolean).join(' · ')}</div>`:''}
+          </div>
         </div>`).join('')}
     </div>` : ''}
     ${sentiment?.catalysts?.length ? `
-    <div>
+    <div style="margin-bottom:12px">
       <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--navy);margin-bottom:8px">Catalizzatori chiave</div>
-      ${sentiment.catalysts.map(c=>`<div style="font-size:.78rem;padding:4px 0;color:var(--text2)">• ${c}</div>`).join('')}
+      ${sentiment.catalysts.map(c=>`<div style="font-size:.78rem;padding:4px 0;color:var(--text2)">• ${escH(c)}</div>`).join('')}
     </div>` : ''}
-    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--parchment);display:flex;gap:10px">
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--parchment);display:flex;gap:10px;align-items:center">
       <button class="btn btn-primary btn-sm" onclick="spToggleSelect('${ticker}');document.getElementById('spNewsPanel').style.display='none'">
         ${SP_SELECTED[ticker]?'Rimuovi dal portafoglio':'+ Aggiungi al portafoglio'}
       </button>
       <button class="btn btn-outline btn-sm" onclick="document.getElementById('spNewsPanel').style.display='none'">Chiudi</button>
+      <span style="margin-left:auto;font-size:.65rem;color:var(--muted)">Dati: Yahoo Finance · Alpha Vantage · Claude AI (web search)</span>
     </div>
   `;
   window.scrollTo({top:sy, behavior:'instant'});
 }
 
-async function callGPT(msg){
-  if(!S.oaiKey||!S.results)return localAdvisor(msg.toLowerCase());
+// ─── Claude Opus 4.6 — advisor chat con adaptive thinking ───
+async function callClaude(msg){
+  if(!S.claudeKey||!S.results)return localAdvisor(msg.toLowerCase());
   const R=S.results;
-  const ctx=`Sei un advisor pensionistico professionista per clienti ${S.country==='IT'?'italiani':'svizzeri'}.
-Portafoglio: ${R.total.toLocaleString('it-IT')}€, ${R.assets.length} asset.
-Profilo: ${PROF[S.profile].label}. Anni alla pensione: ${R.anni}. Età: ${R.eta}.
-Sharpe ottimizzato: ${R.optM.sharpe.toFixed(2)}. Rendimento atteso: ${(R.optM.r*100).toFixed(1)}%.
-Dividend yield: ${(R.divGrossYield*100).toFixed(1)}%. Capitale pensione stimato: ${Math.round(R.fvCapital).toLocaleString('it-IT')}€.
-Rendita mensile netta: ${Math.round(R.netMonthlyIncome).toLocaleString('it-IT')}€/mese.
-Paese: ${S.country}. Costi mensili: ${R.costs.toLocaleString('it-IT')}€/mese.
-Rispondi in italiano, in modo professionale ma chiaro. Massimo 3 paragrafi.`;
+
+  // Prompt di sistema ricco con dati reali del portafoglio
+  const sysPrompt=`Sei un advisor pensionistico professionista certificato (CFP) specializzato in clienti ${S.country==='IT'?'italiani (normativa INPS, PIR L.232/2016, fondi pensione complementare D.Lgs 252/2005, IRPEF, imposta sostitutiva 26%)':'svizzeri (LPP/BVG, Pilastro 3a OPP3, AVS/AHV, imposta alla fonte, deduzione fiscale cantonale)'}.
+
+DATI PORTAFOGLIO CLIENTE (aggiornati al ${new Date().toLocaleDateString('it-IT')}):
+• Capitale totale: ${R.total.toLocaleString('it-IT')}€ · Asset: ${R.assets.length} posizioni
+• Profilo rischio: ${PROF[S.profile].label} · Anni alla pensione: ${R.anni} · Età: ${R.eta}
+• Rendimento portafoglio ottimizzato: ${fmtP(R.optM.r)} · Volatilità: ${fmtP(R.optM.vol)}
+• Sharpe Ratio: ${R.optM.sharpe.toFixed(3)} · Treynor: ${R.optM.treynor.toFixed(3)} · Beta: ${R.optM.beta.toFixed(2)}
+• Dividend Yield lordo: ${fmtP(R.divGrossYield)}
+• Capitale futuro stimato (${R.anni}a): ${fmtE(R.fvCapital)}
+• Rendita mensile (regola 4%): ${fmtE(R.monthlyPension4pct)}/mese
+• Reddito da dividendi: ${fmtE(R.divIncome/12)}/mese
+• Pensione pubblica (${S.country==='IT'?'INPS':'AVS+LPP'}): ${fmtE(R.altraPensione)}/mese
+• Costi mensili: ${R.costs.toLocaleString('it-IT')}€ · Surplus/deficit: ${fmtE(R.surplusDeficit)}/mese
+• VaR 95%: ${R.riskMetrics?.varAnnual!=null?fmtP(R.riskMetrics.varAnnual):'N/D'} · CVaR: ${R.riskMetrics?.cvar!=null?fmtP(R.riskMetrics.cvar):'N/D'}
+• Risparmio fiscale annuo stimato: ${fmtE((R.fiscal?.pirSaving||0)+(R.fiscal?.taxSaving||R.fiscal?.pillar3aSaving||0))}
+• Asset principali: ${(R.assets||[]).slice(0,5).map(a=>`${a.ticker}(${fmtP(a.cw)})`).join(', ')}
+
+ISTRUZIONI RISPOSTA:
+- Italiano professionale · max 4 paragrafi · usa dati quantitativi del portafoglio
+- Cita normative specifiche quando pertinenti (D.Lgs, leggi, circolare INPS/FINMA)
+- Distingui sempre tra analisi educativa e consiglio specifico regolamentato
+- Usa ** per grassetto nei termini tecnici chiave`;
+
   try{
-    const res=await fetch('https://api.openai.com/v1/chat/completions',{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.oaiKey},
-      body:JSON.stringify({model:'gpt-4o',max_tokens:400,
-        messages:[{role:'system',content:ctx},{role:'user',content:msg}]})
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':S.claudeKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-opus-4-6',
+        max_tokens:1024,
+        thinking:{type:'adaptive'},
+        system:sysPrompt,
+        messages:[{role:'user',content:msg}]
+      })
     });
     const data=await res.json();
-    if(data.error)return`(!) API Error: ${data.error.message}`;
-    return data.choices[0].message.content.replace(/\n/g,'<br>');
-  }catch(e){return localAdvisor(msg.toLowerCase())}
+    if(data.error)return`<span style="color:#c0392b">(!) Errore API Claude: ${escH(data.error.message)}</span>`;
+    const textBlock=data.content.find(b=>b.type==='text');
+    return(textBlock?.text||localAdvisor(msg.toLowerCase()))
+      .replace(/\n/g,'<br>')
+      .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+  }catch(e){
+    console.warn('Claude API error:',e);
+    return localAdvisor(msg.toLowerCase());
+  }
 }
 
 function localAdvisor(msg){
