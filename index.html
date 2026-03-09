@@ -1419,7 +1419,11 @@ function addCost(desc='',amt='',type='fisso'){
 }
 function totalCosts(){
   return [...document.querySelectorAll('#costsContainer .cost-row')]
-    .reduce((s,r)=>s+parseFloat(r.querySelectorAll('input')[1].value||0),0);
+    .reduce((sum,row)=>{
+      const amountInput = row.querySelector('input[type="number"]');
+      const amount = parseFloat(amountInput?.value || 0);
+      return sum + (Number.isFinite(amount) ? amount : 0);
+    },0);
 }
 
 // ──────────────────────────────────────────────
@@ -1683,18 +1687,25 @@ fi.addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[
 function handleFile(file){
   const r=new FileReader();
   r.onload=e=>{
-    const wb=XLSX.read(e.target.result,{type:'binary'});
-    const ws=wb.Sheets[wb.SheetNames[0]];
-    const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-    S.portfolio=parsePortfolio(raw);
-    showChip(file.name,S.portfolio.length);
-    enableRun();
+    try {
+      const data = e?.target?.result;
+      const wb = XLSX.read(data, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      S.portfolio = parsePortfolio(raw);
+      showChip(file.name,S.portfolio.length);
+      enableRun();
+    } catch (err) {
+      console.error('Errore import file:', err);
+      showNotification('Import non riuscito', 'File non valido o formato non supportato. Usa .xlsx/.xls con ticker riconoscibili.', 'warning');
+    }
   };
-  r.readAsBinaryString(file);
+  r.onerror=()=>showNotification('Errore lettura file', 'Impossibile leggere il file selezionato.', 'warning');
+  r.readAsArrayBuffer(file);
 }
 function showChip(name,n){
   const c=document.getElementById('fileChip');
-  c.innerHTML=`<span>${name}</span><span style="background:var(--emerald);color:#fff;padding:2px 8px;border-radius:100px;font-size:.7rem;margin-left:4px">${n} titoli</span>`;
+  c.innerHTML=`<span>${escH(name)}</span><span style="background:var(--emerald);color:#fff;padding:2px 8px;border-radius:100px;font-size:.7rem;margin-left:4px">${n} titoli</span>`;
   c.classList.remove('hidden');
 }
 function enableRun(){
@@ -5397,7 +5408,14 @@ function checkDrift(assets, hybrid) {
 // ──────────────────────────────────────────────
 function fmtP(v){return(v*100).toFixed(1)+'%'}
 function fmtE(v){return'€ '+Math.round(v).toLocaleString('it-IT')}
-function escH(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function escH(s){
+  return String(s ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
 function selFtab(el,id){
   document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.ftab-body').forEach(b=>b.classList.remove('active'));
