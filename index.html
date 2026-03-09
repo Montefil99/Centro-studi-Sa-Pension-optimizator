@@ -758,7 +758,7 @@ footer strong{color:#cc2200}
   <div class="sec-title">Parametri del piano</div>
   <div class="params-grid">
     <div class="param-box">
-      <div class="param-lbl">💰 Capitale totale (€/CHF)</div>
+      <div class="param-lbl">💰 Capitale portafoglio (€/CHF)</div>
       <input class="param-inp" type="number" id="pCapitale" value="350000" min="1000">
     </div>
     <div class="param-box">
@@ -770,11 +770,11 @@ footer strong{color:#cc2200}
       <input class="param-inp" type="number" id="pEtaPensione" value="65" min="50" max="75">
     </div>
     <div class="param-box">
-      <div class="param-lbl">📥 Versamento mensile (€)</div>
+      <div class="param-lbl">📥 Versamento mensile (€/CHF)</div>
       <input class="param-inp" type="number" id="pVersamento" value="800" min="0">
     </div>
     <div class="param-box">
-      <div class="param-lbl">🎯 Rendita mensile target (€)</div>
+      <div class="param-lbl">🎯 Rendita mensile netta target</div>
       <input class="param-inp" type="number" id="pRenditaTarget" value="3500" min="0">
     </div>
     <div class="param-box">
@@ -785,9 +785,128 @@ footer strong{color:#cc2200}
       <div class="param-lbl">📈 Inflazione attesa (%)</div>
       <input class="param-inp" type="number" id="pInflazione" value="2.3" step="0.1">
     </div>
-    <div class="param-box">
-      <div class="param-lbl">💵 Altra pensione mensile (es. INPS)</div>
+    <div class="param-box" id="boxAltraPensione">
+      <div class="param-lbl">💵 Pensione pubblica mensile (INPS/AVS)</div>
       <input class="param-inp" type="number" id="pAltraPensione" value="1200" min="0">
+    </div>
+  </div>
+
+  <!-- ── PARAMETRI SVIZZERI (solo visibili quando CH selezionato) ── -->
+  <div id="chParamsSection" style="display:none;margin-top:28px;padding:22px;background:linear-gradient(135deg,#f0faf5,#e8f5e9);border-radius:12px;border:1px solid #c8e6c9">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <span style="font-size:1.1rem">🇨🇭</span>
+      <div>
+        <div style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#2e7d32;margin-bottom:2px">Parametri Pensione Svizzera (3 Pilastri)</div>
+        <div style="font-size:.78rem;color:var(--muted)">Dati specifici per il sistema previdenziale CH · Legge federale sul libero passaggio (LPP/BVG)</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
+
+      <!-- 1° Pilastro: AVS -->
+      <div style="background:#fff;border-radius:9px;padding:16px;border-left:3px solid #2e7d32">
+        <div style="font-size:.62rem;font-weight:700;color:#2e7d32;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">1° Pilastro — AVS/AHV</div>
+        <div class="param-lbl" style="font-size:.74rem">Rendita AVS mensile (CHF)</div>
+        <input class="param-inp" type="number" id="pAVS" value="2100" min="0" max="2520" step="10" oninput="updateAVSHint()">
+        <div id="avsHint" style="font-size:.66rem;color:var(--muted);margin-top:5px">Max 2024: CHF 2.520/mese (pensione piena)</div>
+      </div>
+
+      <!-- 2° Pilastro: LPP/BVG -->
+      <div style="background:#fff;border-radius:9px;padding:16px;border-left:3px solid #1c1c2e">
+        <div style="font-size:.62rem;font-weight:700;color:#1c1c2e;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">2° Pilastro — LPP/BVG</div>
+        <div class="param-lbl" style="font-size:.74rem">Capitale LPP accumulato (CHF)</div>
+        <input class="param-inp" type="number" id="pLPP" value="280000" min="0" step="1000" oninput="updateLPPHint()">
+        <div class="param-lbl" style="font-size:.74rem;margin-top:10px">Modalità di prelievo</div>
+        <select class="param-inp" id="pLPPMode" onchange="updateLPPHint()" style="margin-top:4px">
+          <option value="rendita">Rendita mensile (6.8%/a)</option>
+          <option value="capitale">Prelievo in capitale (lump-sum)</option>
+          <option value="split50">Split 50% rendita + 50% capitale</option>
+          <option value="split25">Split 25% rendita + 75% capitale</option>
+          <option value="split75">Split 75% rendita + 25% capitale</option>
+        </select>
+        <div id="lppHint" style="font-size:.66rem;color:var(--muted);margin-top:5px">Tasso di conversione obbligatorio: 6.8%</div>
+      </div>
+
+      <!-- 3a Pilastro vincolato -->
+      <div style="background:#fff;border-radius:9px;padding:16px;border-left:3px solid #b8922a">
+        <div style="font-size:.62rem;font-weight:700;color:#b8922a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">3° Pilastro A — Vincolato</div>
+        <div class="param-lbl" style="font-size:.74rem">Capitale 3a accumulato (CHF)</div>
+        <input class="param-inp" type="number" id="p3a" value="85000" min="0" step="1000">
+        <div class="param-lbl" style="font-size:.74rem;margin-top:10px">Contributo annuo 3a (CHF)</div>
+        <input class="param-inp" type="number" id="p3aContrib" value="7056" min="0" max="35280" step="100">
+        <div style="font-size:.66rem;color:var(--muted);margin-top:5px">Max 2024: CHF 7.056/a (dipendenti) · CHF 35.280 (indipendenti)</div>
+      </div>
+
+      <!-- 3b Pilastro libero -->
+      <div style="background:#fff;border-radius:9px;padding:16px;border-left:3px solid #7c3aed">
+        <div style="font-size:.62rem;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">3° Pilastro B — Libero</div>
+        <div class="param-lbl" style="font-size:.74rem">Risparmio 3b / portafoglio ETF (CHF)</div>
+        <input class="param-inp" type="number" id="p3b" value="50000" min="0" step="1000">
+        <div style="font-size:.66rem;color:var(--muted);margin-top:8px">Plusvalenze: 0% per investitori privati · Dividendi: dichiarabili · Nessun limite contributo</div>
+      </div>
+
+      <!-- Canton / Aliquota fiscale -->
+      <div style="background:#fff;border-radius:9px;padding:16px;border-left:3px solid #c0392b">
+        <div style="font-size:.62rem;font-weight:700;color:#c0392b;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Fiscalità Cantonale</div>
+        <div class="param-lbl" style="font-size:.74rem">Cantone di residenza</div>
+        <select class="param-inp" id="pCanton" onchange="updateCantonTax()" style="margin-top:4px">
+          <option value="ZH">Zurigo (ZH) ~26%</option>
+          <option value="BE">Berna (BE) ~28%</option>
+          <option value="LU" selected>Lucerna (LU) ~22%</option>
+          <option value="SZ">Svitto (SZ) ~17%</option>
+          <option value="ZG">Zugo (ZG) ~14%</option>
+          <option value="GE">Ginevra (GE) ~31%</option>
+          <option value="VD">Vaud (VD) ~30%</option>
+          <option value="TI">Ticino (TI) ~24%</option>
+          <option value="BS">Basilea Città (BS) ~29%</option>
+          <option value="AG">Argovia (AG) ~24%</option>
+        </select>
+        <div class="param-lbl" style="font-size:.74rem;margin-top:10px">Aliquota media cantonale + federale (%)</div>
+        <input class="param-inp" type="number" id="pCantonTax" value="22" min="5" max="45" step="0.5">
+        <div style="font-size:.66rem;color:var(--muted);margin-top:5px">Usata per calcolo imposta su rendita AVS/LPP</div>
+      </div>
+
+    </div>
+    <div id="lppRenditaCalc" style="margin-top:16px;padding:14px;background:#e8f5e9;border-radius:8px;font-size:.8rem;color:#1b5e20;display:none">
+      <!-- Updated dynamically -->
+    </div>
+  </div>
+
+  <!-- ── PARAMETRI ITALIANI (solo visibili quando IT selezionato) ── -->
+  <div id="itParamsSection" style="display:none;margin-top:28px;padding:22px;background:linear-gradient(135deg,#fff8f0,#fff3e0);border-radius:12px;border:1px solid #ffe0b2">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <span style="font-size:1.1rem">🇮🇹</span>
+      <div>
+        <div style="font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e65100;margin-bottom:2px">Parametri Pensione Italiana</div>
+        <div style="font-size:.78rem;color:var(--muted)">Sistema previdenziale INPS · Fondi complementari · PIR</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">
+      <div style="background:#fff;border-radius:9px;padding:16px;border-left:3px solid #e65100">
+        <div style="font-size:.62rem;font-weight:700;color:#e65100;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Pensione INPS / Quota 103</div>
+        <div class="param-lbl" style="font-size:.74rem">Pensione INPS mensile lorda (€)</div>
+        <input class="param-inp" type="number" id="pINPS" value="1200" min="0" step="50">
+        <div style="font-size:.66rem;color:var(--muted);margin-top:5px">Al lordo IRPEF. Tassazione ordinaria progressiva.</div>
+      </div>
+      <div style="background:#fff;border-radius:9px;padding:16px;border-left:3px solid #1d6a47">
+        <div style="font-size:.62rem;font-weight:700;color:#1d6a47;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Fondo Pensione Complementare</div>
+        <div class="param-lbl" style="font-size:.74rem">Capitale fondo pensione (€)</div>
+        <input class="param-inp" type="number" id="pFondoPensione" value="0" min="0" step="1000">
+        <div class="param-lbl" style="font-size:.74rem;margin-top:10px">Contributo annuo fondo (€)</div>
+        <input class="param-inp" type="number" id="pFondoContrib" value="3000" min="0" max="5164" step="100">
+        <div style="font-size:.66rem;color:var(--muted);margin-top:5px">Max deducibile: €5.164/a. Riscatto tassato 9–15% (min 15 anni).</div>
+      </div>
+      <div style="background:#fff;border-radius:9px;padding:16px;border-left:3px solid #1565c0">
+        <div style="font-size:.62rem;font-weight:700;color:#1565c0;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">PIR — Piano Individuale Risparmio</div>
+        <div class="param-lbl" style="font-size:.74rem">Investimento annuo PIR (€)</div>
+        <input class="param-inp" type="number" id="pPIR" value="10000" min="0" max="40000" step="1000">
+        <div style="font-size:.66rem;color:var(--muted);margin-top:5px">Max €40.000/a. 0% CG + dividendi se >5 anni. 30% PMI italiane.</div>
+      </div>
+      <div style="background:#fff;border-radius:9px;padding:16px;border-left:3px solid #7c3aed">
+        <div style="font-size:.62rem;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">Aliquota IRPEF media (%)</div>
+        <div class="param-lbl" style="font-size:.74rem">Aliquota marginale IRPEF (%)</div>
+        <input class="param-inp" type="number" id="pIRPEF" value="38" min="23" max="43" step="1">
+        <div style="font-size:.66rem;color:var(--muted);margin-top:5px">Su pensione INPS. Scaglioni: 23% (&lt;28K), 35% (28-50K), 43% (&gt;50K)</div>
+      </div>
     </div>
   </div>
 
@@ -1008,9 +1127,27 @@ footer strong{color:#cc2200}
     <div class="sec-eyebrow">Piano di Rendita Pensionistica</div>
     <div class="sec-title" style="margin-bottom:20px">Waterfall del reddito mensile</div>
     <div class="retirement-main" id="retirementMain"></div>
+
+    <!-- SCENARI DI PRELIEVO -->
     <div class="card" style="margin-top:22px;padding:26px">
-      <h3 style="font-family:'Cormorant Garamond',serif;margin-bottom:20px">📈 Proiezione del Capitale &amp; Reddito nel Tempo</h3>
-      <canvas id="growthChart" height="160"></canvas>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <div class="sec-eyebrow" style="margin-bottom:4px">Scenari di prelievo</div>
+          <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.15rem">Confronto 5 strategie di ritiro del capitale</h3>
+        </div>
+        <span style="font-size:.72rem;color:var(--muted)">Tutti al netto imposte stimate</span>
+      </div>
+      <div id="withdrawalScenarios"></div>
+    </div>
+
+    <!-- PROIEZIONE ANNO PER ANNO -->
+    <div class="card" style="margin-top:22px;padding:26px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h3 style="font-family:'Cormorant Garamond',serif;margin-bottom:0">📅 Proiezione Anno per Anno</h3>
+        <button onclick="toggleYearTable()" class="btn btn-outline btn-xs" id="yearTableToggle">Mostra tabella completa</button>
+      </div>
+      <div style="height:200px;position:relative"><canvas id="growthChart"></canvas></div>
+      <div id="yearTable" style="display:none;margin-top:18px;overflow-x:auto"></div>
     </div>
   </section>
 
@@ -1200,6 +1337,10 @@ const TD = {
   'STM.MI':{n:'STMicroelectronics',   r:.22,v:.32,b:1.40,dy:.005,pe:14,s:'Technology',   fcf:28},
   'MB.MI': {n:'Mediobanca',           r:.15,v:.21,b:1.05,dy:.050,pe:10,s:'Financials',   fcf:22},
   'UCG.MI':{n:'UniCredit',            r:.18,v:.25,b:1.20,dy:.090,pe:7, s:'Financials',   fcf:35},
+  'CSPX':   {n:'iShares S&P500 Acc (IE)',r:.12,v:.16,b:1.00,dy:0,  pe:22,s:'ETF Broad',    fcf:0},
+  'SWDA':   {n:'iShares MSCI World Acc (IE)',r:.11,v:.15,b:.98,dy:0, pe:21,s:'ETF Broad',  fcf:0},
+  'VWCE':   {n:'Vanguard FTSE All-World Acc',r:.11,v:.15,b:.98,dy:0,pe:20,s:'ETF Broad',   fcf:0},
+  'XGVH':   {n:'Xtrackers Global Govt Bond',r:.03,v:.04,b:.02,dy:.028,pe:0,s:'Bond ETF',   fcf:0},
   'NESN.SW':{n:'Nestlé SA',           r:.07,v:.13,b:.55, dy:.028,pe:20,s:'Consumer Staples',fcf:58},
   'ROG.SW':{n:'Roche Holding AG',     r:.06,v:.14,b:.50, dy:.032,pe:17,s:'Healthcare',   fcf:52},
   'NOVN.SW':{n:'Novartis AG',         r:.08,v:.14,b:.55, dy:.035,pe:16,s:'Healthcare',   fcf:48},
@@ -1230,6 +1371,21 @@ function applyCountry(){
   S.country=document.getElementById('countrySelect').value;
   const badge=document.getElementById('countryBadge');
   if(badge) badge.textContent=S.country==='IT'?'🇮🇹 Regime Italiano':'🇨🇭 Regime Svizzero';
+  const isCH = S.country === 'CH';
+  const chSec = document.getElementById('chParamsSection');
+  const itSec = document.getElementById('itParamsSection');
+  if(chSec) chSec.style.display = isCH ? 'block' : 'none';
+  if(itSec) itSec.style.display = isCH ? 'none' : 'block';
+  // Update the "altra pensione" label
+  const lbl = document.querySelector('#boxAltraPensione .param-lbl');
+  if(lbl) lbl.textContent = isCH ? '💵 AVS/AHV rendita mensile (CHF)' : '💵 Pensione INPS mensile (€)';
+  // Update RF default for CH (SNB rate lower)
+  if(isCH) {
+    const rfEl = document.getElementById('pRF');
+    if(rfEl && parseFloat(rfEl.value) > 3) rfEl.value = '1.0';
+    const inflEl = document.getElementById('pInflazione');
+    if(inflEl && parseFloat(inflEl.value) > 2.5) inflEl.value = '1.2';
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -1562,25 +1718,69 @@ function loadDemo(){
     {ticker:'KO',     name:'Coca-Cola',            value:8000, quantity:130, buyPrice:58,  category:'Consumer'},
     {ticker:'TLT',    name:'20Y Treasury',         value:11500,quantity:125, buyPrice:88,  category:'Obbligazioni'},
   ];
-  document.getElementById('countrySelect').value='IT';S.country='IT';
-  showChip('portafoglio_demo_italia.xlsx',S.portfolio.length);enableRun();
+  document.getElementById('countrySelect').value='IT'; S.country='IT';
+  const setValIT = (id,v) => { const el=document.getElementById(id); if(el) el.value=v; };
+  setValIT('pCapitale', 205000);
+  setValIT('pEta', 52);
+  setValIT('pEtaPensione', 67);
+  setValIT('pVersamento', 800);
+  setValIT('pRenditaTarget', 3500);
+  setValIT('pRF', 3.2);
+  setValIT('pInflazione', 2.3);
+  setValIT('pAltraPensione', 1400);
+  setValIT('pINPS', 1400);
+  setValIT('pFondoPensione', 45000);
+  setValIT('pFondoContrib', 3600);
+  setValIT('pPIR', 15000);
+  setValIT('pIRPEF', 35);
+  applyCountry();
+  showChip('portafoglio_demo_italia.xlsx',S.portfolio.length);
+  enableRun();
+  showNotification('Demo Italia caricato',
+    'Portfolio €205K · INPS €1.400/m · Fondo pensione €45K · PIR €15K/a · Aliquota IRPEF 35%',
+    'success');
 }
 function loadDemoCH(){
   S.portfolio=[
-    {ticker:'NESN.SW',name:'Nestlé SA',           value:32000,quantity:280, buyPrice:105, category:'Consumer CH'},
-    {ticker:'ROG.SW', name:'Roche Holding',       value:28000,quantity:85,  buyPrice:300, category:'Healthcare CH'},
-    {ticker:'NOVN.SW',name:'Novartis AG',         value:22000,quantity:220, buyPrice:88,  category:'Healthcare CH'},
-    {ticker:'ZURN.SW',name:'Zurich Insurance',    value:18000,quantity:45,  buyPrice:380, category:'Finance CH'},
-    {ticker:'ABBN.SW',name:'ABB Ltd',             value:14000,quantity:420, buyPrice:30,  category:'Industrials CH'},
-    {ticker:'SPY',    name:'S&P 500 ETF',         value:25000,quantity:52,  buyPrice:420, category:'ETF'},
-    {ticker:'AGG',    name:'Bond ETF',            value:20000,quantity:210, buyPrice:93,  category:'Obbligazioni'},
-    {ticker:'GLD',    name:'Oro ETF',             value:15000,quantity:76,  buyPrice:185, category:'Commodities'},
-    {ticker:'VIG',    name:'Dividend ETF',        value:12000,quantity:88,  buyPrice:132, category:'ETF Dividend'},
-    {ticker:'TLT',    name:'20Y Treasury',        value:10000,quantity:110, buyPrice:88,  category:'Obbligazioni'},
+    {ticker:'NESN.SW',name:'Nestlé SA',           value:52000,quantity:280, buyPrice:105, category:'Consumer CH'},
+    {ticker:'ROG.SW', name:'Roche Holding',       value:45000,quantity:85,  buyPrice:300, category:'Healthcare CH'},
+    {ticker:'NOVN.SW',name:'Novartis AG',         value:38000,quantity:220, buyPrice:88,  category:'Healthcare CH'},
+    {ticker:'ZURN.SW',name:'Zurich Insurance',    value:32000,quantity:45,  buyPrice:380, category:'Finance CH'},
+    {ticker:'ABBN.SW',name:'ABB Ltd',             value:28000,quantity:420, buyPrice:30,  category:'Industrials CH'},
+    {ticker:'CSPX',   name:'iShares S&P500 Acc (IE)',value:55000,quantity:95, buyPrice:540, category:'ETF Acc'},
+    {ticker:'SWDA',   name:'iShares MSCI World Acc (IE)',value:42000,quantity:620,buyPrice:65,category:'ETF Acc'},
+    {ticker:'AGG',    name:'Bond ETF',            value:30000,quantity:210, buyPrice:93,  category:'Obbligazioni'},
+    {ticker:'GLD',    name:'Oro ETF',             value:22000,quantity:76,  buyPrice:185, category:'Commodities'},
+    {ticker:'SCHD',   name:'Schwab Dividend ETF', value:18000,quantity:88,  buyPrice:132, category:'ETF Dividend'},
+    {ticker:'TLT',    name:'20Y Treasury',        value:15000,quantity:110, buyPrice:88,  category:'Obbligazioni'},
+    {ticker:'VIG',    name:'Dividend Appreciation ETF',value:13000,quantity:88,buyPrice:132,category:'ETF Dividend'},
   ];
-  document.getElementById('countrySelect').value='CH';S.country='CH';
+  document.getElementById('countrySelect').value='CH'; S.country='CH';
+  // Set typical CH pension parameters
+  const setVal = (id,v) => { const el=document.getElementById(id); if(el) el.value=v; };
+  setVal('pCapitale', 390000);
+  setVal('pEta', 55);
+  setVal('pEtaPensione', 65);
+  setVal('pVersamento', 1200);
+  setVal('pRenditaTarget', 6500);
+  setVal('pRF', 1.0);
+  setVal('pInflazione', 1.2);
+  setVal('pAltraPensione', 2100);
+  setVal('pAVS', 2100);
+  setVal('pLPP', 380000);
+  setVal('pLPPMode', 'split50');
+  setVal('p3a', 120000);
+  setVal('p3aContrib', 7056);
+  setVal('p3b', 80000);
+  setVal('pCanton', 'LU');
+  setVal('pCantonTax', 22);
   applyCountry();
-  showChip('portafoglio_demo_svizzera.xlsx',S.portfolio.length);enableRun();
+  updateLPPHint();
+  showChip('portafoglio_demo_svizzera.xlsx', S.portfolio.length);
+  enableRun();
+  showNotification('Demo Svizzera caricato',
+    'Portfolio CHF 390K · AVS CHF 2.100/m · LPP CHF 380K (split 50%) · Pilastro 3a CHF 120K · Cantone Lucerna',
+    'success');
 }
 function selProfile(el,name){
   document.querySelectorAll('.pcard').forEach(c=>c.classList.remove('active'));
@@ -1777,41 +1977,237 @@ function dcfScore(ticker, price) {
 }
 
 // ──────────────────────────────────────────────
-//  FISCAL CALCULATIONS
+//  FISCAL CALCULATIONS (CH + IT complete)
 // ──────────────────────────────────────────────
-function fiscalCalc(totalDiv,portRet,totalVal,country){
-  const rf=parseFloat(document.getElementById('pRF').value)/100||.032;
-  if(country==='IT'){
-    const divTax=0.26; // imposta sostitutiva IT su dividendi
-    const cgtTax=0.26; // capital gain
-    const divGross=totalVal*totalDiv;
-    const divNet=divGross*(1-divTax);
-    const cgGross=totalVal*Math.max(0,portRet-totalDiv);
-    const cgNet=cgGross*(1-cgtTax);
-    // PIR benefit: 0% if held >5y, max €30K/a
-    const pirSaving=Math.min(30000,divGross+cgGross)*cgtTax*0.5; // estimation
-    // Previdenza complementare: deductible €5164.57/a
-    const fondiPensDeduction=5164.57;
-    const taxSaving=fondiPensDeduction*0.23; // ~IRPEF 23%
-    return{country:'IT',divGross,divNet,divTax,cgGross,cgNet,cgtTax,
-      pirSaving,fondiPensDeduction,taxSaving,
-      totalTaxWithout:(divGross+cgGross)*divTax,
-      totalTaxOptimized:(divGross+cgGross)*divTax-pirSaving-taxSaving};
+
+// ─── Canton tax rates (combined cantonal + federal, approx. marginal) ───
+const CANTON_TAX = {
+  ZH:0.265, BE:0.285, LU:0.220, SZ:0.170, ZG:0.140,
+  GE:0.310, VD:0.300, TI:0.240, BS:0.290, AG:0.240,
+  NW:0.155, OW:0.155, UR:0.180, GL:0.200, FR:0.270,
+  SO:0.250, BL:0.275, SH:0.235, AR:0.215, AI:0.190,
+  SG:0.240, GR:0.215, TG:0.215, NE:0.295, JU:0.285, VS:0.260,
+};
+
+function updateCantonTax() {
+  const canton = document.getElementById('pCanton')?.value || 'LU';
+  const rate = CANTON_TAX[canton] || 0.22;
+  const el = document.getElementById('pCantonTax');
+  if(el) el.value = (rate * 100).toFixed(1);
+  updateLPPHint();
+}
+
+function updateAVSHint() {
+  const avs = parseFloat(document.getElementById('pAVS')?.value || 0);
+  const el = document.getElementById('avsHint');
+  if(!el) return;
+  const pct = avs / 2520;
+  el.textContent = `${(pct*100).toFixed(0)}% della rendita massima AVS 2024 (CHF 2.520/mese)`;
+}
+
+function updateLPPHint() {
+  const lpp = parseFloat(document.getElementById('pLPP')?.value || 0);
+  const mode = document.getElementById('pLPPMode')?.value || 'rendita';
+  const cantonTax = parseFloat(document.getElementById('pCantonTax')?.value || 22) / 100;
+  const el = document.getElementById('lppHint');
+  const calcEl = document.getElementById('lppRenditaCalc');
+  if(!el) return;
+
+  const lppRenditaAnn = lpp * 0.068; // 6.8% tasso conversione
+  const lppRenditaMens = lppRenditaAnn / 12;
+
+  if(mode === 'rendita') {
+    el.textContent = `Rendita LPP: CHF ${lppRenditaMens.toFixed(0)}/mese · Tasso conversione: 6.8%`;
+  } else if(mode === 'capitale') {
+    // Capital withdrawal tax: typically 1/5 of ordinary rate
+    const taxRate = cantonTax / 5;
+    const taxAmt = lpp * taxRate;
+    el.textContent = `Imposta prelievo capitale: ~${(taxRate*100).toFixed(1)}% = CHF ${taxAmt.toFixed(0)} · Netto: CHF ${(lpp-taxAmt).toFixed(0)}`;
   } else {
-    // CH Svizzera
-    const withholdingTax=0.35; // imposta preventiva CH
-    const reclaimable=0.35*0.6; // recuperabile (domiciliati CH)
-    const lppMax=7056;// CHF, contributo max 3a pilastro 2024
-    const divGross=totalVal*totalDiv;
-    const withheld=divGross*withholdingTax;
-    const reclaimed=withheld*0.6;
-    const netDiv=divGross-withheld+reclaimed;
-    const pillar3aSaving=lppMax*0.315; // ~31.5% aliquota media CH
-    const cgTax=0; // CH: plusvalenze privati = ESENTI (regola generale)
-    return{country:'CH',divGross,netDiv,withheld,reclaimed,withholdingTax,
-      lppMax,pillar3aSaving,cgTax,
-      note:'Plusvalenze su titoli privati: generalmente ESENTAS in Svizzera (salvo trader professionale).',
-      totalTaxWithout:withheld,totalTaxOptimized:withheld-reclaimed-pillar3aSaving};
+    const splitRendita = mode === 'split50' ? 0.5 : mode === 'split25' ? 0.25 : 0.75;
+    const splitCapitale = 1 - splitRendita;
+    const lppRendita = lpp * splitRendita * 0.068 / 12;
+    const lppCapNet = lpp * splitCapitale * (1 - cantonTax/5);
+    el.textContent = `Rendita: CHF ${lppRendita.toFixed(0)}/mese + Capitale netto: CHF ${lppCapNet.toFixed(0)}`;
+  }
+
+  if(calcEl) {
+    calcEl.style.display = 'block';
+    calcEl.innerHTML = `
+      <strong>Calcolo automatico LPP:</strong>
+      Capitale CHF ${lpp.toLocaleString('it-CH')} × 6.8% = <strong>CHF ${lppRenditaAnn.toFixed(0)}/anno</strong> =
+      <strong>CHF ${lppRenditaMens.toFixed(0)}/mese</strong> (tasso conversione obbligatorio LPP 2024)
+      · La rendita è tassata come reddito ordinario (${(cantonTax*100).toFixed(0)}% stimato)
+    `;
+  }
+}
+
+// ─── Swiss pension complete calculation ───
+function swissPensionCalc(fvPortfolio, divGrossYield, opts) {
+  const {
+    avs = 2100,          // CHF/mese rendita AVS
+    lppCapital = 280000, // CHF LPP accumulato
+    lppMode = 'rendita', // rendita / capitale / split50 / split25 / split75
+    p3aCapital = 85000,  // CHF Pilastro 3a
+    p3aContrib = 7056,   // CHF contributo annuo 3a residui
+    p3bCapital = 50000,  // CHF portafoglio libero
+    cantonTax = 0.22,    // aliquota cantonale+federale marginale
+    years = 15,          // anni accumulo residui
+  } = opts;
+
+  // ── Calcolo LPP ──
+  const lppConvRate = 0.068; // tasso conversione obbligatorio
+  const capitalWithdrawTax = cantonTax / 5; // prelievo capitale: 1/5 aliquota ordinaria
+
+  let lppMonthlyRendita = 0;
+  let lppCapitalNet = 0;
+  let lppCapitalTax = 0;
+
+  if(lppMode === 'rendita') {
+    lppMonthlyRendita = lppCapital * lppConvRate / 12;
+    lppCapitalNet = 0;
+  } else if(lppMode === 'capitale') {
+    lppCapitalTax = lppCapital * capitalWithdrawTax;
+    lppCapitalNet = lppCapital - lppCapitalTax;
+    lppMonthlyRendita = 0;
+  } else {
+    const splitR = lppMode === 'split50' ? 0.5 : lppMode === 'split25' ? 0.25 : 0.75;
+    const splitC = 1 - splitR;
+    lppMonthlyRendita = lppCapital * splitR * lppConvRate / 12;
+    lppCapitalTax = lppCapital * splitC * capitalWithdrawTax;
+    lppCapitalNet = lppCapital * splitC - lppCapitalTax;
+  }
+
+  // ── AVS taxation (ordinary income, at cantonTax rate) ──
+  const avsMonthly = avs;
+  const avsAnnual = avs * 12;
+  // AVS taxed as ordinary income — apply effective rate (not marginal)
+  const avsEffectiveRate = Math.max(0.05, cantonTax * 0.75); // effective lower than marginal
+  const avsTaxMonthly = avsMonthly * avsEffectiveRate;
+  const avsNetMonthly = avsMonthly - avsTaxMonthly;
+
+  // ── LPP rendita taxation (ordinary income) ──
+  const lppRenditaTax = lppMonthlyRendita * avsEffectiveRate;
+  const lppRenditaNet = lppMonthlyRendita - lppRenditaTax;
+
+  // ── Pilastro 3a withdrawal tax (1/5 of ordinary rate, separate) ──
+  const p3aTaxRate = cantonTax / 5;
+  const p3aTax = p3aCapital * p3aTaxRate;
+  const p3aNet = p3aCapital - p3aTax;
+  // Spread over 5 years for sequential withdrawal (recommended strategy)
+  const p3aMonthlyIncome = p3aNet / (5 * 12); // monthly income over 5 years
+
+  // ── Portfolio dividends (Verrechnungssteuer 35%, fully recoverable for CH residents) ──
+  const portDivGross = fvPortfolio * divGrossYield;
+  const verrechnungssteuer = 0.35; // 35% imposta preventiva
+  const portDivWithheld = portDivGross * verrechnungssteuer;
+  const portDivRecovered = portDivWithheld; // 100% recoverable for CH residents
+  const portDivNetAnnual = portDivGross; // effectively 0% after recovery
+  // But must still pay income tax on dividend income
+  const portDivIncomeTax = portDivGross * avsEffectiveRate * 0.6; // 60% of div is taxable income
+  const portDivNet = portDivGross - portDivIncomeTax;
+
+  // ── Capital gains: 0% for private investors ──
+  const cgTax = 0;
+
+  // ── 3a contribution tax saving ──
+  const p3aAnnualSaving = p3aContrib * cantonTax;
+
+  // ── Summary ──
+  return {
+    // AVS
+    avsMonthly, avsNetMonthly, avsTaxMonthly, avsAnnual, avsEffectiveRate,
+    // LPP
+    lppCapital, lppMonthlyRendita, lppRenditaNet, lppRenditaTax,
+    lppCapitalNet, lppCapitalTax, capitalWithdrawTax, lppMode,
+    // 3a
+    p3aCapital, p3aNet, p3aTax, p3aTaxRate, p3aMonthlyIncome,
+    p3aAnnualSaving, p3aContrib,
+    // 3b
+    p3bCapital,
+    // Portfolio
+    portDivGross, portDivWithheld, portDivRecovered, portDivNet,
+    portDivNetAnnual, portDivIncomeTax, verrechnungssteuer,
+    cgTax,
+    // Canton
+    cantonTax, capitalWithdrawTax,
+    // Totals
+    totalPensionGross: avsMonthly + lppMonthlyRendita,
+    totalPensionNet: avsNetMonthly + lppRenditaNet,
+    totalTaxes: avsTaxMonthly*12 + lppRenditaTax*12 + lppCapitalTax + p3aTax + portDivIncomeTax,
+  };
+}
+
+function fiscalCalc(totalDiv, portRet, totalVal, country) {
+  const rf = parseFloat(document.getElementById('pRF').value)/100 || 0.032;
+
+  if(country === 'IT') {
+    const divTax = 0.26;
+    const cgtTax = 0.26;
+    const pirInvest = parseFloat(document.getElementById('pPIR')?.value || 0);
+    const fondoContrib = parseFloat(document.getElementById('pFondoContrib')?.value || 0);
+    const irpef = parseFloat(document.getElementById('pIRPEF')?.value || 38) / 100;
+
+    const divGross = totalVal * totalDiv;
+    const divNet = divGross * (1 - divTax);
+    const cgGross = totalVal * Math.max(0, portRet - totalDiv);
+    const cgNet = cgGross * (1 - cgtTax);
+
+    // PIR: 0% su max €40K/a se >5 anni (aggiornato 2024)
+    const pirEffective = Math.min(40000, pirInvest);
+    const pirSaving = pirEffective * divTax; // risparmio vs no-PIR
+    // Fondo pensione deducibilità (max €5.164/a)
+    const fondoDeduction = Math.min(5164, fondoContrib);
+    const taxSaving = fondoDeduction * irpef;
+    // Bonus ETF accumulazione: rinvio tassazione (stima 0.5%/a su valore)
+    const accumulazioneBenefit = totalVal * 0.005;
+
+    return {
+      country:'IT', divGross, divNet, divTax, cgGross, cgNet, cgtTax,
+      pirSaving, pirEffective, fondoDeduction, taxSaving, accumulazioneBenefit,
+      irpef,
+      totalTaxWithout: (divGross+cgGross)*divTax,
+      totalTaxOptimized: (divGross+cgGross)*divTax - pirSaving - taxSaving,
+      totalSavingYear: pirSaving + taxSaving + accumulazioneBenefit,
+    };
+  } else {
+    // ── CH Svizzera ──
+    const cantonTax = parseFloat(document.getElementById('pCantonTax')?.value || 22) / 100;
+    const p3aContrib = parseFloat(document.getElementById('p3aContrib')?.value || 7056);
+    const verrechnungssteuer = 0.35;
+
+    const divGross = totalVal * totalDiv;
+    // Distinguish CH equities (35% withheld, 100% recoverable) vs foreign
+    const chWeight = 0.3; // assume 30% CH equities (user can adjust)
+    const chDivWithheld = divGross * chWeight * verrechnungssteuer;
+    const chDivRecovered = chDivWithheld; // 100% for CH residents
+    const foreignDivTax = divGross * (1-chWeight) * 0.15; // avg 15% foreign withholding
+    const netDiv = divGross - foreignDivTax; // CH div recovered, foreign 15% not
+
+    // Dividend income tax (at effective rate ~60% of marginal)
+    const avsEffRate = cantonTax * 0.6;
+    const divIncomeTax = divGross * avsEffRate;
+
+    // Pilastro 3a saving
+    const p3aSaving = p3aContrib * cantonTax;
+
+    // Capital gains: 0%
+    const cgTax = 0;
+    const cgGross = totalVal * Math.max(0, portRet - totalDiv);
+
+    return {
+      country:'CH', divGross, netDiv, divTax: avsEffRate,
+      divWithheld: chDivWithheld, divRecovered: chDivRecovered,
+      foreignDivTax, divIncomeTax,
+      cgTax, cgGross, cgNet: cgGross, // 0% tax
+      p3aSaving, p3aContrib, cantonTax, verrechnungssteuer,
+      pillar3aSaving: p3aSaving,
+      reclaimed: chDivRecovered,
+      totalTaxWithout: chDivWithheld + foreignDivTax,
+      totalTaxOptimized: foreignDivTax - p3aSaving,
+      totalSavingYear: chDivRecovered + p3aSaving,
+      note:'Plusvalenze su titoli privati: ESENTI (salvo trader professionale) · Dividendi CH: 35% → 100% recuperabile',
+    };
   }
 }
 
@@ -2084,6 +2480,15 @@ function buildResults(){
   const inflazione=parseFloat(document.getElementById('pInflazione').value)/100||.023;
   const costs=totalCosts();
 
+  // Read Swiss pension params (only used when CH)
+  const avsMonthly = parseFloat(document.getElementById('pAVS')?.value || 2100);
+  const lppCapital = parseFloat(document.getElementById('pLPP')?.value || 280000);
+  const lppMode    = document.getElementById('pLPPMode')?.value || 'rendita';
+  const p3aCapital = parseFloat(document.getElementById('p3a')?.value || 85000);
+  const p3aContrib = parseFloat(document.getElementById('p3aContrib')?.value || 7056);
+  const p3bCapital = parseFloat(document.getElementById('p3b')?.value || 50000);
+  const cantonTax  = parseFloat(document.getElementById('pCantonTax')?.value || 22) / 100;
+
   const total=pf.reduce((s,a)=>s+a.value,0);
   const assets=pf.map(a=>{const d=td(a.ticker);return{...a,...d,cw:a.value/total}});
 
@@ -2117,6 +2522,15 @@ function buildResults(){
   // Fiscal
   const fiscal=fiscalCalc(divGrossYield,optM.r,total,S.country);
 
+  // Swiss pension complete calculation
+  const chPension = S.country==='CH' ? swissPensionCalc(total, divGrossYield, {
+    avs: avsMonthly, lppCapital, lppMode, p3aCapital, p3aContrib, p3bCapital,
+    cantonTax, years: anni
+  }) : null;
+
+  // For Italian: read INPS from dedicated field
+  const itINPS = S.country==='IT' ? parseFloat(document.getElementById('pINPS')?.value || altraPensione) : 0;
+
   // Retirement projections
   const annualVers=versamento*12;
   const realRet=(1+optM.r)/(1+inflazione)-1;
@@ -2132,7 +2546,10 @@ function buildResults(){
   const monthlyDivNet   = monthlyDivGross * (1-(fiscal.divTax||0.26));
   const monthly4pct     = fvPortfolio * 0.04 / 12;  // SWR 4%
   const monthly3pct     = fvPortfolio * 0.03 / 12;  // conservative 3%
-  const monthlyAltra    = altraPensione;
+  // Monthly from public pension (AVS+LPP for CH, INPS for IT)
+  const monthlyAltra    = S.country==='CH'
+    ? (chPension?.avsNetMonthly||0) + (chPension?.lppRenditaNet||0) + (chPension?.p3aMonthlyIncome||0)
+    : itINPS * (1 - (parseFloat(document.getElementById('pIRPEF')?.value||38)/100));
 
   // Total gross vs net
   const grossMonthlyIncome = monthly4pct + monthlyAltra + monthlyDivGross;
@@ -2202,13 +2619,13 @@ function buildResults(){
   
   S.results={pf,assets,hybrid,prof,rf,capital,anni,annualVers,versamento,rendTarget,
     altraPensione,costs,inflazione,total,currM,optM,divGrossYield,divIncome,
-    dcfScores,fiscal,fvCapital,monthlyPension4pct:monthly4pct,monthlyDivIncome:monthlyDivGross,
+    dcfScores,fiscal,chPension,fvCapital,monthlyPension4pct:monthly4pct,monthlyDivIncome:monthlyDivGross,
     monthlyDivNet,monthlyDivGross,monthly4pct,monthly3pct,monthlyAltra,
     grossMonthlyIncome,netMonthlyIncome,surplusDeficit,realRet,eta,etaPensione,
     capitalLasts:Math.min(capitalLasts,99),requiredCapital,capitalGap,
     monthlySavingsNeeded,var95annual,maxDrawdown:optM.maxDD,calmar:optM.calmar,
     sortino:optM.sortino,cvar95:optM.cvar95,infoRatio:optM.infoRatio,
-    mc, stressTests, bondAnalyses, portDuration};
+    mc, stressTests, bondAnalyses, portDuration, riskMetrics: optM};
 
   renderResults(S.results);
 }
@@ -2604,6 +3021,8 @@ function renderResults(R){
 
   // Retirement
   renderRetirement(R);
+  renderWithdrawalScenarios(R);
+  renderYearTable(R);
   renderGrowth(R);
 
   // Forecast
@@ -2670,25 +3089,45 @@ function renderFiscal(fiscal,R){
   const isIT=fiscal.country==='IT';
   document.getElementById('countryBadge').textContent=isIT?'🇮🇹 Regime Italiano':'🇨🇭 Regime Svizzero';
 
+  const cur = isIT ? '€' : 'CHF';
+  const cp = R.chPension || {};
+
   // Overview
   document.getElementById('fiscalOverview').innerHTML=`
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-      <div style="padding:18px;background:var(--parchment);border-radius:8px">
-        <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Dividendi lordi/a</div>
-        <div style="font-size:1.4rem;font-weight:700;font-family:'Cormorant Garamond',serif">${fmtE(fiscal.divGross)}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-bottom:20px">
+      <div style="padding:16px;background:var(--parchment);border-radius:8px;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Dividendi lordi/a</div>
+        <div style="font-size:1.2rem;font-weight:700;font-family:'Cormorant Garamond',serif">${cur} ${(fiscal.divGross||0).toLocaleString('it-CH',{maximumFractionDigits:0})}</div>
       </div>
-      <div style="padding:18px;background:var(--em2);border-radius:8px">
-        <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Dividendi netti/a</div>
-        <div style="font-size:1.4rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:var(--emerald)">${fmtE(isIT?fiscal.divNet:(fiscal.netDiv||fiscal.divGross*.72))}</div>
+      <div style="padding:16px;background:var(--em2);border-radius:8px;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Dividendi netti/a</div>
+        <div style="font-size:1.2rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:var(--emerald)">${cur} ${(isIT?(fiscal.divNet||0):(fiscal.netDiv||fiscal.divGross*0.72||0)).toLocaleString('it-CH',{maximumFractionDigits:0})}</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:4px">${isIT?'aliquota 26%':fiscal.verrechnungssteuer?'35% VStG → recuperata':'0% eff.'}</div>
       </div>
-      <div style="padding:18px;background:var(--ru2);border-radius:8px">
-        <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Risparmio fiscale stimato</div>
-        <div style="font-size:1.4rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:var(--ruby)">${fmtE(isIT?(fiscal.pirSaving+fiscal.taxSaving):(fiscal.pillar3aSaving+fiscal.reclaimed))}</div>
+      <div style="padding:16px;background:#f0faf5;border-radius:8px;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Plusvalenze/a</div>
+        <div style="font-size:1.2rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:${isIT?'#c0392b':'#2e7d32'}">${isIT?cur+' '+(fiscal.cgGross*0.26||0).toLocaleString('it-CH',{maximumFractionDigits:0})+' tax':'0% ESENTE'}</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:4px">${isIT?'aliquota 26%':'Privati CH: esenzione totale'}</div>
       </div>
+      <div style="padding:16px;background:${isIT?'#fff8f0':'#e8f5e9'};border-radius:8px;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${isIT?'Risp. PIR/anno':'Risp. 3a/anno'}</div>
+        <div style="font-size:1.2rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:#2e7d32">+ ${cur} ${(isIT?(fiscal.pirSaving||0):(fiscal.p3aSaving||0)).toLocaleString('it-CH',{maximumFractionDigits:0})}</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:4px">${isIT?'PIR >5 anni: 0%':'Deduzione reddito imponibile'}</div>
+      </div>
+      <div style="padding:16px;background:var(--ru2);border-radius:8px;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Risparmio totale/a</div>
+        <div style="font-size:1.2rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:#c0392b">+ ${cur} ${(fiscal.totalSavingYear||0).toLocaleString('it-CH',{maximumFractionDigits:0})}</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:4px">vs scenario non ottimizzato</div>
+      </div>
+      ${!isIT ? `<div style="padding:16px;background:#fffde7;border-radius:8px;text-align:center">
+        <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Imp. LPP prelievo</div>
+        <div style="font-size:1.2rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:#f59e0b">${((cp.capitalWithdrawTax||0.044)*100).toFixed(1)}%</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:4px">vs ${((cp.cantonTax||0.22)*100).toFixed(0)}% ordinario — sconto ${(((cp.cantonTax||0.22)-(cp.capitalWithdrawTax||0.044))*100).toFixed(1)}%</div>
+      </div>` : ''}
     </div>
     <p style="font-size:.83rem;color:var(--muted);line-height:1.65">${isIT?
-      'In Italia i dividendi di azioni italiane e ETF sono soggetti a ritenuta del <strong>26%</strong> (imposta sostitutiva). I fondi pensione complementari beneficiano di deducibilità fino a <strong>€5.164/a</strong> e tassazione agevolata al <strong>12,5–20%</strong> al momento del riscatto.':
-      'In Svizzera le azioni svizzere pagano l\'imposta preventiva del <strong>35%</strong>, recuperabile per i residenti. Le plusvalenze su titoli privati sono generalmente <strong>ESENTI</strong>. Il <strong>Pilastro 3a</strong> permette contributi deducibili fino a <strong>CHF 7.056/a</strong>.'
+      'In Italia i dividendi di azioni italiane e ETF sono soggetti a ritenuta del <strong>26%</strong> (imposta sostitutiva). I fondi pensione complementari beneficiano di deducibilità fino a <strong>€5.164/a</strong> e tassazione agevolata al <strong>12,5%</strong> al riscatto. Il PIR offre esenzione totale (0%) su dividendi e plusvalenze se detenuto >5 anni.':
+      'In Svizzera le azioni svizzere pagano l\'imposta preventiva del <strong>35%</strong> (Verrechnungssteuer), recuperabile al <strong>100%</strong> per i residenti CH. Le plusvalenze su titoli privati sono <strong>ESENTI al 0%</strong>. Il <strong>Pilastro 3a</strong> permette contributi deducibili fino a <strong>CHF 7.056/a</strong>. Il prelievo LPP in capitale è tassato solo al <strong>${((cp.capitalWithdrawTax||0.044)*100).toFixed(1)}%</strong> (1/5 aliquota ordinaria).'
     }</p>`;
 
   // Dividendi
@@ -2744,20 +3183,55 @@ function renderFiscal(fiscal,R){
       3) Convertire ETF distributing → accumulazione per rinviare tassazione.
       4) Compensare minus con plus entro 4 anni in regime amministrato.
     </div>`:
-    `<h4 style="font-family:'Cormorant Garamond',serif;margin-bottom:14px;font-size:1.05rem">Sistema dei 3 Pilastri Svizzero</h4>
+    `<h4 style="font-family:'Cormorant Garamond',serif;margin-bottom:14px;font-size:1.05rem">Sistema dei 3 Pilastri Svizzero — Analisi Personalizzata Cliente</h4>
     <table class="fiscal-table">
-      <tr><th>Pilastro</th><th>Descrizione</th><th>Contributo 2024</th><th>Vantaggio Fiscale</th></tr>
-      <tr class="highlight-row"><td>1° AVS/AI</td><td>Pensione statale obbligatoria</td><td>Contributi da salario</td><td>Copertura base. Max CHF 29.400/a (coppia CHF 58.800)</td></tr>
-      <tr><td>2° LPP</td><td>Cassa pensioni aziendale</td><td>Obbligatorio da CHF 22.050</td><td>Rendimento minimo garantito. Capitale a scelta lump-sum o rendita</td></tr>
-      <tr class="highlight-row"><td>3a Vincolato</td><td>Pilastro 3a bancario/assicurativo</td><td>CHF 7.056/a (dipendenti)</td><td>🏆 Deduzione 100% reddito imponibile. Prelievo ~6% separato. MAX ogni anno!</td></tr>
-      <tr><td>3b Libero</td><td>Risparmio libero, ETF, azioni</td><td>Illimitato</td><td>Plusvalenze ESENTI. Dividendi dichiarabili. Nessun limite ma no deduzione</td></tr>
+      <tr><th>Pilastro</th><th>Strumento</th><th>Importi Cliente</th><th>Tassazione</th><th>Calcolo Netto</th></tr>
+      <tr class="highlight-row">
+        <td>1° AVS/AHV</td><td>Pensione statale</td>
+        <td>CHF ${(cp.avsMonthly||0).toFixed(0)}/mese lordo<br><small style="color:var(--muted)">Max 2024: CHF 2.520</small></td>
+        <td>Reddito ordinario<br>${((cp.avsEffectiveRate||0.165)*100).toFixed(0)}% eff. (${((cp.cantonTax||0.22)*100).toFixed(0)}% marginale)</td>
+        <td><strong>CHF ${(cp.avsNetMonthly||0).toFixed(0)}/mese netto</strong><br>Imposta: CHF ${(cp.avsTaxMonthly||0).toFixed(0)}/mese</td>
+      </tr>
+      <tr>
+        <td>2° LPP/BVG</td><td>Cassa pensioni</td>
+        <td>CHF ${(cp.lppCapital||0).toLocaleString('it-CH')} accumulato<br>Modalità: <strong>${cp.lppMode||'rendita'}</strong></td>
+        <td>${cp.lppMode==='rendita'||cp.lppMode?.includes('rendita')?`Rendita: ord. ${((cp.cantonTax||0.22)*100).toFixed(0)}%`:`Capitale: ${((cp.capitalWithdrawTax||0.044)*100).toFixed(1)}% (1/5 ordinaria)`}</td>
+        <td><strong>CHF ${((cp.lppRenditaNet||0)+(cp.lppCapitalNet||0)/(cp.lppCapitalNet?20:1)/12).toFixed(0)}/mese netto</strong></td>
+      </tr>
+      <tr class="highlight-row">
+        <td>3° A Vincolato</td><td>Pilastro 3a</td>
+        <td>CHF ${(cp.p3aCapital||0).toLocaleString('it-CH')} capitale<br>Contributo: CHF ${(cp.p3aContrib||7056).toFixed(0)}/a</td>
+        <td>Prelievo: ${((cp.p3aTaxRate||0.044)*100).toFixed(1)}%<br>Risparmio/a: CHF ${(cp.p3aAnnualSaving||0).toFixed(0)}</td>
+        <td><strong>CHF ${(cp.p3aNet||0).toLocaleString('it-CH')} netto</strong><br>Tax: CHF ${(cp.p3aTax||0).toFixed(0)} (una tantum)</td>
+      </tr>
+      <tr>
+        <td>3° B Libero</td><td>ETF, azioni, risparmio</td>
+        <td>CHF ${(cp.p3bCapital||0).toLocaleString('it-CH')}<br>+ portafoglio gestito</td>
+        <td>Plusvalenze: 0%<br>Dividendi CH: 35% → recuperato</td>
+        <td>🏆 <strong>ESENTE plusvalenze</strong><br>Dividendi: dichiara e recupera</td>
+      </tr>
     </table>
-    <div style="padding:14px;background:#f0faf5;border-radius:8px;margin-top:16px;font-size:.82rem;color:var(--muted)">
-      💡 <strong style="color:var(--navy)">Strategia ottimale CH:</strong>
-      1) Massimizzare Pilastro 3a ogni anno (CHF 7.056, risparmio ~CHF 2.200).
-      2) Usare ETF domicilio Irlanda (iShares IE) per dividendi esteri efficienti.
-      3) Sfruttare esenzione plusvalenze: realizzare guadagni senza imposta.
-      4) Valutare prelievo LPP in capitale (lump-sum) vs rendita per ottimizzazione fiscale.
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:14px">
+      <div style="padding:14px;background:#e8f5e9;border-radius:8px;font-size:.8rem">
+        <div style="font-weight:700;color:#2e7d32;margin-bottom:6px">✓ Reddito pensione netto/mese</div>
+        <div>AVS: <strong>CHF ${(cp.avsNetMonthly||0).toFixed(0)}</strong></div>
+        <div>LPP rendita: <strong>CHF ${(cp.lppRenditaNet||0).toFixed(0)}</strong></div>
+        <div>3a (5 anni): <strong>CHF ${(cp.p3aMonthlyIncome||0).toFixed(0)}</strong></div>
+        <div style="border-top:1px solid #c8e6c9;margin-top:6px;padding-top:6px;font-weight:700">Totale: CHF ${((cp.avsNetMonthly||0)+(cp.lppRenditaNet||0)+(cp.p3aMonthlyIncome||0)).toFixed(0)}/mese</div>
+      </div>
+      <div style="padding:14px;background:#fffde7;border-radius:8px;font-size:.8rem">
+        <div style="font-weight:700;color:#b8922a;margin-bottom:6px">💰 Risparmio fiscale totale</div>
+        <div>3a annuo: <strong>CHF ${(cp.p3aAnnualSaving||0).toFixed(0)}/a</strong></div>
+        <div>3a in ${R.anni} anni: <strong>CHF ${((cp.p3aAnnualSaving||0)*R.anni).toFixed(0)}</strong></div>
+        <div>LPP sconto cap.: <strong>CHF ${((cp.lppCapital||0)*((cp.cantonTax||0.22)-(cp.capitalWithdrawTax||0.044))).toFixed(0)}</strong></div>
+      </div>
+    </div>
+    <div style="padding:14px;background:#f0faf5;border-radius:8px;margin-top:12px;font-size:.82rem;color:var(--muted)">
+      💡 <strong style="color:var(--navy)">Strategia Centro Studi Monte:</strong>
+      1) Massimizzare Pilastro 3a ogni anno (CHF ${(cp.p3aContrib||7056).toFixed(0)}/a → risparmio CHF ${(cp.p3aAnnualSaving||0).toFixed(0)}/a).
+      2) Aprire 3-5 conti 3a separati: prelievo scaglionato riduce aliquota media al prelievo.
+      3) Modalità LPP ottimale: ${cp.lppMode||'rendita'} (imposta: ${((cp.capitalWithdrawTax||0.044)*100).toFixed(1)}% vs ${((cp.cantonTax||0.22)*100).toFixed(0)}% ordinario).
+      4) Portafoglio 3b con ETF Irlanda: 0% plusvalenze + Verrechnungssteuer recuperata.
     </div>`;
 
   // Strategie
@@ -2787,54 +3261,454 @@ function renderFiscal(fiscal,R){
 function renderRetirement(R){
   const{fvCapital,monthly4pct,monthly3pct,netMonthlyIncome,surplusDeficit,costs,
     altraPensione,rendTarget,fiscal,divGrossYield,monthlyDivGross,monthlyDivNet,
-    total,anni,optM,capitalLasts,requiredCapital,capitalGap,monthlySavingsNeeded}=R;
+    total,anni,optM,capitalLasts,requiredCapital,capitalGap,monthlySavingsNeeded,
+    chPension}=R;
   const isIT=S.country==='IT';
   const costsByType=getCostsByType();
-  
+  const cur = isIT ? '€' : 'CHF';
+
+  // Build detailed income sources
+  let wfRows = [];
+  let totalGross = 0;
+  let totalTax = 0;
+  let totalNet = 0;
+
+  if(isIT){
+    // IT: INPS pensione
+    const inpsGross = parseFloat(document.getElementById('pINPS')?.value || altraPensione);
+    const irpef = parseFloat(document.getElementById('pIRPEF')?.value || 38)/100;
+    const inpsTax = inpsGross * irpef;
+    const inpsNet = inpsGross - inpsTax;
+    wfRows.push({label:'Pensione INPS lorda', gross: inpsGross, tax: inpsTax, net: inpsNet, color:'#f59e0b', icon:'🏛️'});
+
+    // Fondo pensione complementare (rendita stimata)
+    const fondoCap = parseFloat(document.getElementById('pFondoPensione')?.value || 0);
+    if(fondoCap > 0){
+      const fondoRendita = fondoCap * 0.04 / 12; // stima 4%/a
+      const fondoTax = fondoRendita * 0.125; // tassazione agevolata 12.5%
+      wfRows.push({label:'Fondo pensione complementare', gross: fondoRendita, tax: fondoTax, net: fondoRendita-fondoTax, color:'#10b981', icon:'📋'});
+    }
+
+    // Dividendi portafoglio (26% ritenuta)
+    const divGrossMens = fvCapital * divGrossYield / 12;
+    const divTax = divGrossMens * 0.26;
+    const divNet = divGrossMens - divTax;
+    wfRows.push({label:'Dividendi portafoglio', gross: divGrossMens, tax: divTax, net: divNet, color:'#2e7d32', icon:'💰'});
+
+    // SWR 4% prelievo capitale (no additional tax se ETF acc.)
+    const swr4 = fvCapital * 0.04 / 12;
+    const swrTax = swr4 * 0.26 * 0.5; // approx: 50% è CG
+    wfRows.push({label:'Prelievo portafoglio (SWR 4%)', gross: swr4, tax: swrTax, net: swr4-swrTax, color:'#3b82f6', icon:'📈'});
+
+    // PIR benefit (nota)
+    const pirInv = parseFloat(document.getElementById('pPIR')?.value || 0);
+    if(pirInv > 0){
+      const pirBenefit = Math.min(pirInv, 40000) * 0.26 / 12;
+      wfRows.push({label:'Risparmio PIR (0% tax)', gross: 0, tax: -pirBenefit, net: pirBenefit, color:'#8b5cf6', icon:'⭐', isBonus: true});
+    }
+
+  } else {
+    // CH: sistema 3 pilastri
+    const cp = chPension || {};
+
+    // 1° Pilastro: AVS
+    wfRows.push({label:'Rendita AVS/AHV (1° pilastro)', gross: cp.avsMonthly||0, tax: cp.avsTaxMonthly||0, net: cp.avsNetMonthly||0, color:'#2e7d32', icon:'🏛️'});
+
+    // 2° Pilastro: LPP rendita
+    if((cp.lppMonthlyRendita||0) > 0){
+      wfRows.push({label:'Rendita LPP (2° pilastro)', gross: cp.lppMonthlyRendita, tax: cp.lppRenditaTax||0, net: cp.lppRenditaNet||0, color:'#1c1c2e', icon:'🏢'});
+    }
+
+    // 2° Pilastro: LPP capitale (se prelevato) — distribuito su 20 anni
+    if((cp.lppCapitalNet||0) > 0){
+      const lppCapMens = cp.lppCapitalNet / (20*12);
+      wfRows.push({label:'Capitale LPP (distribuito 20a)', gross: lppCapMens + cp.lppCapitalTax/(20*12), tax: cp.lppCapitalTax/(20*12), net: lppCapMens, color:'#475569', icon:'💼', note:'Imposta già pagata al prelievo'});
+    }
+
+    // 3° Pilastro 3a (distribuito su 5 anni)
+    if((cp.p3aMonthlyIncome||0) > 0){
+      wfRows.push({label:'Pilastro 3a (prelievo su 5 anni)', gross: cp.p3aCapital/(5*12), tax: cp.p3aTax/(5*12), net: cp.p3aMonthlyIncome, color:'#b8922a', icon:'🏦'});
+    }
+
+    // Dividendi portafoglio gestito Centro Studi
+    const divGrossMens = fvCapital * divGrossYield / 12;
+    const verrSteuer = divGrossMens * 0.35; // ritenuta 35%
+    const verrRecup = verrSteuer; // 100% recuperata dai residenti CH
+    const divIncomeTax = divGrossMens * (cp.cantonTax||0.22) * 0.6;
+    const divNet = divGrossMens - divIncomeTax;
+    wfRows.push({label:'Dividendi portafoglio Centro Studi', gross: divGrossMens, tax: divIncomeTax, net: divNet, color:'#059669', icon:'💰', note:'Verrechnungssteuer 35% → recuperata (netto imposta reddito)'});
+
+    // Plusvalenze portafoglio (0% CH)
+    const cgMens = fvCapital * (optM.r - divGrossYield) / 12;
+    if(cgMens > 0){
+      wfRows.push({label:'Plusvalenze portafoglio (0% CH)', gross: cgMens, tax: 0, net: cgMens, color:'#7c3aed', icon:'📈'});
+    }
+  }
+
+  // Totals
+  const grossTotal = wfRows.reduce((s,r) => s + r.gross, 0);
+  const taxTotal = wfRows.reduce((s,r) => s + (r.tax > 0 ? r.tax : 0), 0);
+  const bonusTotal = wfRows.reduce((s,r) => s + (r.tax < 0 ? -r.tax : 0), 0);
+  const netTotal = wfRows.reduce((s,r) => s + r.net, 0);
+  const netAfterCosts = netTotal - costs;
+
   document.getElementById('retirementMain').innerHTML=`
     <div class="ret-top">
       <div>
-        <div class="ret-big-lbl">Capitale stimato al ritiro</div>
-        <div class="ret-big-val">${fmtE(fvCapital)}</div>
+        <div class="ret-big-lbl">Capitale portafoglio al ritiro</div>
+        <div class="ret-big-val">${cur} ${fvCapital.toLocaleString('it-CH',{maximumFractionDigits:0})}</div>
         <div class="ret-big-sub">In ${anni} anni · ${fmtP(R.realRet)}/a reale</div>
         <div style="margin-top:10px">
           <div class="ret-big-lbl">Capitale necessario per target</div>
-          <div style="font-size:1rem;color:${capitalGap>=0?'#4ade80':'#f87171'};font-weight:600">${fmtE(requiredCapital)}</div>
-          <div class="ret-big-sub">${capitalGap>=0?'OK Surplus '+fmtE(capitalGap):'! Gap '+fmtE(-capitalGap)+(monthlySavingsNeeded>0?' — Serve +'+fmtE(monthlySavingsNeeded)+'/mese':'')}</div>
+          <div style="font-size:1rem;color:${capitalGap>=0?'#4ade80':'#f87171'};font-weight:600">${cur} ${requiredCapital.toLocaleString('it-CH',{maximumFractionDigits:0})}</div>
+          <div class="ret-big-sub">${capitalGap>=0?'Surplus '+cur+' '+(capitalGap).toLocaleString('it-CH',{maximumFractionDigits:0}):'Gap '+cur+' '+(-capitalGap).toLocaleString('it-CH',{maximumFractionDigits:0})+(monthlySavingsNeeded>0?' — Serve +'+cur+' '+Math.round(monthlySavingsNeeded)+'/mese':'')}</div>
         </div>
       </div>
       <div>
-        <div class="ret-big-lbl">Rendita mensile netta</div>
-        <div class="ret-big-val" style="color:${netMonthlyIncome>=rendTarget?'#4ade80':'#f87171'}">${fmtE(netMonthlyIncome)}</div>
-        <div class="ret-big-sub">Target: ${fmtE(rendTarget)}/mese · ${netMonthlyIncome>=rendTarget?'RAGGIUNTO':'Mancano '+fmtE(rendTarget-netMonthlyIncome)}</div>
+        <div class="ret-big-lbl">Reddito mensile netto totale</div>
+        <div class="ret-big-val" style="color:${netTotal>=rendTarget?'#4ade80':'#f87171'}">${cur} ${netTotal.toLocaleString('it-CH',{maximumFractionDigits:0})}/mese</div>
+        <div class="ret-big-sub">Target: ${cur} ${rendTarget.toLocaleString('it-CH',{maximumFractionDigits:0})}/mese · ${netTotal>=rendTarget?'✓ RAGGIUNTO':'Mancano '+cur+' '+Math.round(rendTarget-netTotal)}</div>
         <div style="margin-top:12px">
-          <div class="ret-big-lbl">Durata stimata capitale (4% SWR)</div>
+          <div class="ret-big-lbl">Durata stimata capitale portafoglio</div>
           <div style="font-size:1rem;color:${capitalLasts>25?'#4ade80':'#f9a825'};font-weight:600">${capitalLasts>50?'∞ perpetuo':Math.round(capitalLasts)+' anni'}</div>
           <div class="ret-big-sub">Fino a età ${Math.round(R.etaPensione+capitalLasts)} circa</div>
         </div>
       </div>
       <div>
-        <div class="ret-big-lbl">Flusso netto mensile disponibile</div>
-        <div class="ret-big-val" style="color:${surplusDeficit>=0?'#4ade80':'#f87171'}">${surplusDeficit>=0?'+':''}${fmtE(surplusDeficit)}</div>
-        <div class="ret-big-sub">Dopo spese (${fmtE(costs)}/mese) e target rendita</div>
+        <div class="ret-big-lbl">Flusso netto dopo spese</div>
+        <div class="ret-big-val" style="color:${netAfterCosts>=0?'#4ade80':'#f87171'}">${netAfterCosts>=0?'+':''}${cur} ${Math.abs(netAfterCosts).toLocaleString('it-CH',{maximumFractionDigits:0})}/mese</div>
+        <div class="ret-big-sub">Spese: ${cur} ${costs.toLocaleString('it-CH',{maximumFractionDigits:0})}/mese · ${netAfterCosts>=0?'Avanzo mensile':'Disavanzo mensile'}</div>
+        <div style="margin-top:12px">
+          <div class="ret-big-lbl">Imposte totali stimate/mese</div>
+          <div style="font-size:1rem;color:#f87171;font-weight:600">- ${cur} ${taxTotal.toLocaleString('it-CH',{maximumFractionDigits:0})}/mese</div>
+          <div class="ret-big-sub">${(taxTotal/Math.max(grossTotal,1)*100).toFixed(1)}% aliquota effettiva media</div>
+        </div>
       </div>
     </div>
     <div class="ret-waterfall">
-      <div style="font-size:.65rem;color:rgba(255,255,255,.4);letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;font-family:'Outfit',sans-serif">Waterfall reddito mensile al ritiro</div>
-      <div class="wf-row"><span class="wf-label"><span class="ico-dot" style="color:#4ade80;font-weight:800;font-size:.9rem;margin-right:6px">▸</span> Rendita portafoglio SWR 4%</span><span class="wf-val income">+${fmtE(monthly4pct)}/mese</span></div>
-      <div class="wf-row" style="opacity:.7"><span class="wf-label" style="font-size:.76rem"><span style="color:rgba(255,255,255,.4);margin-right:6px">↳</span> Conservativo 3%</span><span class="wf-val" style="color:rgba(255,255,255,.5);font-size:.82rem">${fmtE(monthly3pct)}/mese</span></div>
-      <div class="wf-row"><span class="wf-label">${isIT?'<span class="ico-dot" style="color:#f87171;font-weight:800;font-size:.9rem;margin-right:6px">▹</span> Pensione INPS / altra fonte':'<span style="font-size:.72rem;background:#cc2200;color:#fff;padding:1px 4px;border-radius:2px;margin-right:6px;font-weight:600">CH</span> AVS + LPP rendita'}</span><span class="wf-val income">+${fmtE(altraPensione)}/mese</span></div>
-      <div class="wf-row"><span class="wf-label"><span class="ico-dot" style="color:#4ade80;font-weight:800;font-size:.9rem;margin-right:6px">▸</span> Dividendi &amp; cedole portafoglio</span><span class="wf-val income">+${fmtE(monthlyDivGross)}/mese</span></div>
-      <div class="wf-row"><span class="wf-label"><span class="ico-dot" style="color:#f87171;font-weight:800;font-size:.9rem;margin-right:6px">▹</span> Ritenuta dividendi (${fmtP(fiscal.divTax||.26)})</span><span class="wf-val cost">-${fmtE(monthlyDivGross-(monthlyDivNet||monthlyDivGross*.74))}/mese</span></div>
+      <div style="font-size:.65rem;color:rgba(255,255,255,.4);letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px;font-family:'Outfit',sans-serif">
+        Waterfall reddito mensile al ritiro — tutte le fonti al netto imposte
+      </div>
+      ${wfRows.map(row=>`
+        <div class="wf-row" style="${row.isBonus?'background:rgba(139,92,246,.15)':''}">
+          <span class="wf-label">
+            <span style="margin-right:8px;font-size:.9rem">${row.icon}</span>
+            <span>${row.label}</span>
+            ${row.note?`<span style="font-size:.62rem;color:rgba(255,255,255,.3);margin-left:6px">(${row.note})</span>`:''}
+          </span>
+          <span style="display:flex;align-items:center;gap:14px">
+            <span style="font-size:.74rem;color:rgba(255,255,255,.3);min-width:90px;text-align:right">
+              lordo: ${cur} ${row.gross.toFixed(0)}
+            </span>
+            <span style="font-size:.74rem;color:#f87171;min-width:80px;text-align:right">
+              ${row.tax > 0 ? '-' + cur + ' ' + row.tax.toFixed(0) + ' tax' : (row.isBonus ? '+'+cur+' '+(Math.abs(row.tax)).toFixed(0)+' bonus' : '')}
+            </span>
+            <span class="wf-val ${row.isBonus?'income':row.net>=0?'income':'cost'}" style="min-width:130px">
+              ${row.net>=0?'+':''}${cur} ${row.net.toFixed(0)}/mese
+            </span>
+          </span>
+        </div>`).join('')}
       <div class="wf-sep"></div>
-      <div class="wf-row" style="background:rgba(255,255,255,.08)"><span class="wf-label" style="font-weight:600">= Reddito totale netto</span><span class="wf-val net">${fmtE(netMonthlyIncome)}/mese</span></div>
-      ${costsByType.map(c=>`<div class="wf-row"><span class="wf-label"><span class="ico-dot" style="color:#f87171;font-weight:800;font-size:.9rem;margin-right:6px">•</span> ${c.type} (${c.n} voci)</span><span class="wf-val cost">-${fmtE(c.total)}/mese</span></div>`).join('')}
+      <div class="wf-row" style="background:rgba(255,255,255,.08)">
+        <span class="wf-label" style="font-weight:700">= Reddito totale netto mensile</span>
+        <span style="display:flex;align-items:center;gap:14px">
+          <span style="font-size:.74rem;color:rgba(255,255,255,.3);min-width:90px;text-align:right">lordo: ${cur} ${grossTotal.toFixed(0)}</span>
+          <span style="font-size:.74rem;color:#f87171;min-width:80px;text-align:right">-${cur} ${taxTotal.toFixed(0)} tax</span>
+          <span class="wf-val net" style="min-width:130px">+${cur} ${netTotal.toFixed(0)}/mese</span>
+        </span>
+      </div>
+      ${costsByType.map(c=>`
+        <div class="wf-row">
+          <span class="wf-label"><span style="margin-right:8px">🏠</span> Spese ${c.type} (${c.n} voci)</span>
+          <span style="display:flex;align-items:center;gap:14px">
+            <span style="min-width:90px;text-align:right"></span>
+            <span style="min-width:80px;text-align:right"></span>
+            <span class="wf-val cost" style="min-width:130px">-${cur} ${c.total.toFixed(0)}/mese</span>
+          </span>
+        </div>`).join('')}
       <div class="wf-sep"></div>
       <div class="wf-row" style="background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22)">
-        <span class="wf-label" style="font-weight:700;font-size:.95rem"><span style="font-weight:800;margin-right:6px;color:#e74c3c">&#9670;</span> FLUSSO NETTO DISPONIBILE</span>
-        <span class="wf-val net" style="font-size:1.15rem">${surplusDeficit>=0?'+':''}${fmtE(surplusDeficit)}/mese</span>
+        <span class="wf-label" style="font-weight:700;font-size:.95rem">
+          <span style="margin-right:8px;color:#e74c3c">◆</span> FLUSSO NETTO DISPONIBILE
+        </span>
+        <span class="wf-val net" style="font-size:1.15rem;min-width:130px">${netAfterCosts>=0?'+':''}${cur} ${netAfterCosts.toFixed(0)}/mese</span>
       </div>
     </div>`;
+}
+
+// ── WITHDRAWAL SCENARIOS (5 strategie) ──
+function renderWithdrawalScenarios(R){
+  const el = document.getElementById('withdrawalScenarios');
+  if(!el) return;
+  const isIT = S.country === 'IT';
+  const cur = isIT ? '€' : 'CHF';
+  const fv = R.fvCapital;
+  const costs = R.costs;
+  const {optM, divGrossYield, fiscal, chPension, etaPensione, capitalLasts} = R;
+
+  // Pensione pubblica netta mensile
+  let pensionePubblica = 0;
+  if(isIT){
+    const inpsGross = parseFloat(document.getElementById('pINPS')?.value || R.altraPensione);
+    const irpef = parseFloat(document.getElementById('pIRPEF')?.value || 38)/100;
+    pensionePubblica = inpsGross * (1 - irpef);
+  } else {
+    pensionePubblica = (chPension?.avsNetMonthly||0) + (chPension?.lppRenditaNet||0);
+  }
+
+  const cp = chPension || {};
+  const p3aMonthly = isIT ? 0 : (cp.p3aMonthlyIncome||0);
+  const p3aYears = 5;
+  const cantonTax = cp.cantonTax || 0.22;
+
+  // Dividendi netti mensili
+  const divNetMonthly = fv * divGrossYield / 12 * (1 - (fiscal.divTax||0.22)*0.6);
+
+  // Calc per ogni scenario
+  const scenarios = [
+    {
+      id:'A',
+      name:'Solo Rendite (Capitale intatto)',
+      icon:'🛡️',
+      desc:'Prelievi solo da dividendi e cedole. Il capitale rimane intatto e si trasferisce agli eredi.',
+      sources:[
+        {label:`Pensione pubblica (${isIT?'INPS':'AVS+LPP'})`, monthly: pensionePubblica, color:'#2e7d32'},
+        {label:'Dividendi portafoglio netti', monthly: divNetMonthly, color:'#059669'},
+        ...(p3aMonthly>0?[{label:'Pilastro 3a (5 anni)', monthly: p3aMonthly, color:'#b8922a'}]:[]),
+      ],
+      capitalConsumption: 0,
+      capitalEndResult: fv,
+      note: 'Portafoglio preservato al 100%. Ottimale per trasferimento patrimoniale.',
+      swr: 0,
+      color:'#2e7d32',
+    },
+    {
+      id:'B',
+      name:'Regola del 4% (SWR Standard)',
+      icon:'📊',
+      desc:'Prelievo annuo del 4% del capitale iniziale. Storico: ~95% probabilità di durare 30 anni.',
+      sources:[
+        {label:`Pensione pubblica (${isIT?'INPS':'AVS+LPP'})`, monthly: pensionePubblica, color:'#2e7d32'},
+        {label:'SWR 4% portafoglio', monthly: fv*0.04/12, color:'#3b82f6'},
+        ...(p3aMonthly>0?[{label:'Pilastro 3a (5 anni)', monthly: p3aMonthly, color:'#b8922a'}]:[]),
+      ],
+      capitalConsumption: 0.04,
+      capitalEndResult: fv * 0.95, // storico: capitale quasi invariato
+      note: 'Regola empirica Trinity Study. Al 4% il capitale è storicamente sostenibile ~30 anni.',
+      swr: 0.04,
+      color:'#3b82f6',
+    },
+    {
+      id:'C',
+      name:'Esaurimento in 25 anni',
+      icon:'⏳',
+      desc:`Prelievo calcolato per esaurire il portafoglio entro ${etaPensione+25} anni (età).`,
+      sources:[
+        {label:`Pensione pubblica (${isIT?'INPS':'AVS+LPP'})`, monthly: pensionePubblica, color:'#2e7d32'},
+        {label:'Prelievo capitale 25 anni', monthly: calcAnnuity(fv, optM.r, 25)/12, color:'#f59e0b'},
+        ...(p3aMonthly>0?[{label:'Pilastro 3a (5 anni)', monthly: p3aMonthly, color:'#b8922a'}]:[]),
+      ],
+      capitalConsumption: 1/25,
+      capitalEndResult: 0,
+      note: `Capitale esaurito a ~${etaPensione+25} anni. Adeguato se si ha copertura pensione pubblica.`,
+      swr: null,
+      color:'#f59e0b',
+    },
+    {
+      id:'D',
+      name:'Esaurimento in 30 anni',
+      icon:'📅',
+      desc:`Piano su 30 anni: portafoglio esaurito a ${etaPensione+30} anni.`,
+      sources:[
+        {label:`Pensione pubblica (${isIT?'INPS':'AVS+LPP'})`, monthly: pensionePubblica, color:'#2e7d32'},
+        {label:'Prelievo capitale 30 anni', monthly: calcAnnuity(fv, optM.r, 30)/12, color:'#8b5cf6'},
+        ...(p3aMonthly>0?[{label:'Pilastro 3a (5 anni)', monthly: p3aMonthly, color:'#b8922a'}]:[]),
+      ],
+      capitalConsumption: 1/30,
+      capitalEndResult: 0,
+      note: `Equilibrio ottimale: reddito più alto del 4% SWR ma capitale esaurito a ${etaPensione+30} anni.`,
+      swr: null,
+      color:'#8b5cf6',
+    },
+    ...(isIT ? [] : [{
+      id:'E',
+      name:'Sequenziale 3 Pilastri',
+      icon:'🔄',
+      desc:'Prima ritira Pilastro 3a (anni 1-5), poi LPP capitale, poi portafoglio (anni 6+).',
+      sources:[
+        {label:'AVS/AHV (rend. netta)', monthly: cp.avsNetMonthly||0, color:'#2e7d32'},
+        {label:'3a Pilastro (anni 1-5)', monthly: cp.p3aMonthlyIncome||0, color:'#b8922a'},
+        {label:'Rendita LPP', monthly: cp.lppRenditaNet||0, color:'#1c1c2e'},
+        {label:'Portafoglio 3b+ETF', monthly: fv*0.04/12, color:'#7c3aed'},
+      ],
+      capitalConsumption: 0.04,
+      capitalEndResult: fv,
+      note: 'Ottimizzazione fiscale: prima esaurisci strumenti con meno flessibilità, poi il portafoglio libero.',
+      swr: 0.04,
+      color:'#059669',
+    }]),
+  ];
+
+  el.innerHTML = `
+    <div style="overflow-x:auto;margin-bottom:16px">
+      <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+        <thead>
+          <tr style="background:var(--navy);color:#fff">
+            <th style="padding:12px 14px;text-align:left;font-weight:600;font-size:.74rem">Scenario</th>
+            <th style="padding:12px 10px;text-align:right;font-weight:600;font-size:.74rem">Reddito mensile lordo</th>
+            <th style="padding:12px 10px;text-align:right;font-weight:600;font-size:.74rem">Imposte stimate</th>
+            <th style="padding:12px 10px;text-align:right;font-weight:600;font-size:.74rem">Reddito netto/mese</th>
+            <th style="padding:12px 10px;text-align:right;font-weight:600;font-size:.74rem">vs Spese (${cur} ${costs.toFixed(0)}/m)</th>
+            <th style="padding:12px 10px;text-align:right;font-weight:600;font-size:.74rem">Capitale residuo</th>
+            <th style="padding:12px 10px;text-align:left;font-weight:600;font-size:.74rem">Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${scenarios.map((sc,idx) => {
+            const grossMonthly = sc.sources.reduce((s,r)=>s+r.monthly,0);
+            const divT = grossMonthly * (fiscal.divTax||0.22) * 0.2; // approx tax
+            const netMonthly = grossMonthly - divT;
+            const vsSpese = netMonthly - costs;
+            const bg = idx % 2 === 0 ? '#f8f9fa' : '#ffffff';
+            return `<tr style="background:${bg};border-bottom:1px solid #eee">
+              <td style="padding:12px 14px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:1.1rem">${sc.icon}</span>
+                  <div>
+                    <div style="font-weight:700;color:${sc.color};font-size:.82rem">${sc.id}. ${sc.name}</div>
+                    <div style="font-size:.68rem;color:var(--muted);margin-top:1px">${sc.desc}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="padding:12px 10px;text-align:right;font-weight:600">${cur} ${grossMonthly.toFixed(0)}</td>
+              <td style="padding:12px 10px;text-align:right;color:#c0392b">-${cur} ${divT.toFixed(0)}</td>
+              <td style="padding:12px 10px;text-align:right;font-weight:700;color:${sc.color};font-size:.92rem">${cur} ${netMonthly.toFixed(0)}</td>
+              <td style="padding:12px 10px;text-align:right;color:${vsSpese>=0?'#2e7d32':'#c0392b'};font-weight:600">${vsSpese>=0?'+':''}${cur} ${vsSpese.toFixed(0)}</td>
+              <td style="padding:12px 10px;text-align:right">${sc.capitalEndResult>0?cur+' '+sc.capitalEndResult.toLocaleString('it-CH',{maximumFractionDigits:0}):'0 (esaurito)'}</td>
+              <td style="padding:12px 10px;font-size:.72rem;color:var(--muted);max-width:200px">${sc.note}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
+      ${scenarios.map(sc => {
+        const gross = sc.sources.reduce((s,r)=>s+r.monthly,0);
+        const net = gross * 0.92;
+        return `<div style="flex:1;min-width:180px;background:linear-gradient(135deg,${sc.color}15,${sc.color}08);border:1px solid ${sc.color}30;border-radius:9px;padding:14px;border-top:3px solid ${sc.color}">
+          <div style="font-size:.8rem;font-weight:700;color:${sc.color};margin-bottom:8px">${sc.icon} ${sc.id}. ${sc.name}</div>
+          ${sc.sources.map(src => `<div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--text2);margin-bottom:3px">
+            <span>${src.label}</span><span style="font-weight:600;color:${src.color}">${cur} ${src.monthly.toFixed(0)}</span>
+          </div>`).join('')}
+          <div style="border-top:1px solid ${sc.color}30;margin-top:8px;padding-top:8px;display:flex;justify-content:space-between;font-size:.8rem;font-weight:700">
+            <span>Totale netto est.</span><span style="color:${sc.color}">${cur} ${net.toFixed(0)}/mese</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ── Annuity formula: monthly payment to deplete PV over N years at rate r ──
+function calcAnnuity(pv, annualRate, years) {
+  if(Math.abs(annualRate) < 0.001) return pv / years;
+  const r = annualRate / 12;
+  const n = years * 12;
+  return pv * r * Math.pow(1+r, n) / (Math.pow(1+r, n) - 1);
+}
+
+// ── YEAR BY YEAR TABLE ──
+function renderYearTable(R){
+  const el = document.getElementById('yearTable');
+  if(!el) return;
+  const isIT = S.country === 'IT';
+  const cur = isIT ? '€' : 'CHF';
+  const {fvCapital, realRet, optM, divGrossYield, costs, rendTarget, fiscal,
+         altraPensione, capital, versamento, anni, etaPensione, eta, chPension} = R;
+
+  const pensionNet = isIT
+    ? altraPensione * (1 - (parseFloat(document.getElementById('pIRPEF')?.value||38)/100))
+    : (chPension?.avsNetMonthly||0) + (chPension?.lppRenditaNet||0);
+
+  const rows = [];
+  let cap = capital;
+  const annualContrib = versamento * 12;
+
+  for(let yr = 0; yr <= Math.min(35, anni + 20); yr++){
+    const age = eta + yr;
+    const isRetired = age >= etaPensione;
+    const r = isRetired ? realRet * 0.8 : realRet; // post-retirement: conservative
+
+    // Capital growth
+    if(!isRetired) {
+      cap = cap * (1 + r) + annualContrib;
+    } else {
+      // Post retirement: dividends + 4% SWR
+      const divInc = cap * divGrossYield * (1 - (fiscal.divTax||0.22)*0.6);
+      const swr = cap * 0.04;
+      cap = cap * (1 + r) - swr;
+      if(cap < 0) cap = 0;
+    }
+
+    const divMonthly = cap * divGrossYield / 12 * (1 - (fiscal.divTax||0.22)*0.6);
+    const swr4Monthly = isRetired ? cap * 0.04 / 12 : 0;
+    const pensMonthly = isRetired ? pensionNet : 0;
+    const totalMonthly = isRetired ? (divMonthly + swr4Monthly + pensMonthly) : 0;
+
+    rows.push({yr, age, cap, divMonthly, swr4Monthly, pensMonthly, totalMonthly, isRetired});
+  }
+
+  el.innerHTML = `
+    <div style="font-size:.74rem;font-weight:700;color:var(--navy);margin-bottom:10px">
+      Piano anno per anno · Scenario base (SWR 4% + dividendi + pensione pubblica)
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:.76rem">
+      <thead>
+        <tr style="background:var(--navy);color:#fff">
+          <th style="padding:8px 10px;text-align:right">Anno</th>
+          <th style="padding:8px 10px;text-align:right">Età</th>
+          <th style="padding:8px 10px;text-align:right">Fase</th>
+          <th style="padding:8px 10px;text-align:right">Capitale</th>
+          <th style="padding:8px 10px;text-align:right">Dividendi/mese</th>
+          <th style="padding:8px 10px;text-align:right">SWR 4%/mese</th>
+          <th style="padding:8px 10px;text-align:right">Pensione pub./mese</th>
+          <th style="padding:8px 10px;text-align:right">Totale/mese</th>
+          <th style="padding:8px 10px;text-align:right">vs Target (${cur} ${rendTarget.toFixed(0)})</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r => {
+          const vsTarget = r.isRetired ? r.totalMonthly - rendTarget : null;
+          const bg = r.isRetired ? (vsTarget>=0?'#f0faf5':'#fff5f5') : '#f8f9fa';
+          const rowStyle = r.age === etaPensione ? 'border-top:3px solid #cc2200;' : '';
+          return `<tr style="background:${bg};${rowStyle}border-bottom:1px solid #eee">
+            <td style="padding:7px 10px;text-align:right;font-weight:${r.age===etaPensione?700:400}">${r.yr===0?'Oggi':'+'+r.yr+'a'}</td>
+            <td style="padding:7px 10px;text-align:right;font-weight:${r.age===etaPensione?700:400};color:${r.age===etaPensione?'#cc2200':'inherit'}">${r.age}</td>
+            <td style="padding:7px 10px;text-align:center">
+              <span style="font-size:.65rem;padding:2px 6px;border-radius:3px;font-weight:700;background:${r.isRetired?'#e8f5e9':'#fff3e0'};color:${r.isRetired?'#2e7d32':'#e65100'}">
+                ${r.age===etaPensione?'🚀 RITIRO':r.isRetired?'Pensione':'Accumulo'}
+              </span>
+            </td>
+            <td style="padding:7px 10px;text-align:right;font-weight:600">${cur} ${Math.round(r.cap).toLocaleString('it-CH')}</td>
+            <td style="padding:7px 10px;text-align:right;color:${r.isRetired?'#2e7d32':'#999'}">${r.isRetired?cur+' '+r.divMonthly.toFixed(0):'—'}</td>
+            <td style="padding:7px 10px;text-align:right;color:${r.isRetired?'#3b82f6':'#999'}">${r.isRetired?cur+' '+r.swr4Monthly.toFixed(0):'—'}</td>
+            <td style="padding:7px 10px;text-align:right;color:${r.isRetired?'#f59e0b':'#999'}">${r.isRetired?cur+' '+r.pensMonthly.toFixed(0):'—'}</td>
+            <td style="padding:7px 10px;text-align:right;font-weight:700;color:${r.isRetired?(vsTarget>=0?'#2e7d32':'#c0392b'):'#999'}">${r.isRetired?cur+' '+r.totalMonthly.toFixed(0):'—'}</td>
+            <td style="padding:7px 10px;text-align:right;color:${r.isRetired?(vsTarget>=0?'#2e7d32':'#c0392b'):'#999'};font-weight:${r.isRetired?600:400}">
+              ${r.isRetired?(vsTarget>=0?'+':'')+cur+' '+vsTarget.toFixed(0):'—'}
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function toggleYearTable(){
+  const el = document.getElementById('yearTable');
+  const btn = document.getElementById('yearTableToggle');
+  if(!el||!btn) return;
+  const isShown = el.style.display !== 'none';
+  el.style.display = isShown ? 'none' : 'block';
+  btn.textContent = isShown ? 'Mostra tabella completa' : 'Nascondi tabella';
 }
 
 function getCostsByType(){
@@ -3167,58 +4041,323 @@ function localAdvisor(msg){
 }
 
 // ──────────────────────────────────────────────
-//  EXCEL EXPORT
+//  EXCEL EXPORT (6 fogli completi)
 // ──────────────────────────────────────────────
 function downloadExcel(){
-  if(!S.portfolio||!S.results)return;
-  const R=S.results;
-  const wb=XLSX.utils.book_new();
+  if(!S.portfolio||!S.results) return;
+  const R = S.results;
+  const wb = XLSX.utils.book_new();
+  const isIT = S.country === 'IT';
+  const cur = isIT ? 'EUR' : 'CHF';
+  const dt = new Date().toLocaleDateString('it-CH');
+  const cp = R.chPension || {};
 
-  // Sheet 1: Ribilanciamento
-  const data=[
-    ['PENSIONIQ PRO — REPORT PENSIONISTICO','','','','','','','','','',new Date().toLocaleDateString('it-IT')],
-    [`Profilo: ${PROF[S.profile].label}`,'','',`Paese: ${S.country}`,'','',`Capitale: ${fmtE(R.total)}`,'','',`Anni: ${R.anni}`],
+  // ══ FOGLIO 1: Dashboard Riepilogo ══
+  const sh1 = [
+    ['CENTRO STUDI MONTE SA — PIANO PENSIONISTICO PROFESSIONALE', '', '', '', '', dt],
+    [`Cliente: ${isIT?'🇮🇹 Italia':'🇨🇭 Svizzera'} · Profilo: ${PROF[S.profile].label} · Età: ${R.eta} → Pensione: ${R.etaPensione}`],
     [],
-    ['TICKER','NOME','SETTORE','PESO ATT. %','PESO OTT. %','Δ PESO','VALORE ATT.','VALORE OTT.','Δ €','SHARPE','DIV YIELD','AZIONE'],
+    ['━━━ PORTAFOGLIO OGGI ━━━'],
+    ['Capitale totale portafoglio', R.total.toFixed(0), cur],
+    ['Numero asset', R.assets.length],
+    ['Rendimento atteso portafoglio', (R.optM.r*100).toFixed(2)+'%'],
+    ['Volatilità portafoglio', (R.optM.vol*100).toFixed(2)+'%'],
+    ['Sharpe Ratio', R.optM.sharpe.toFixed(3)],
+    ['Sortino Ratio', (R.optM.sortino||0).toFixed(3)],
+    ['Beta portafoglio', R.optM.beta.toFixed(2)],
+    ['Dividend Yield lordo', (R.divGrossYield*100).toFixed(2)+'%'],
+    ['VaR 95% annuale', (R.optM.var95annual||0).toFixed(0), cur],
+    [],
+    ['━━━ PROIEZIONE AL RITIRO ━━━'],
+    ['Anni alla pensione', R.anni],
+    ['Versamento mensile', R.versamento, cur],
+    ['Inflazione attesa', (R.inflazione*100).toFixed(1)+'%'],
+    ['Rendimento reale/a', (R.realRet*100).toFixed(2)+'%'],
+    ['Capitale stimato al ritiro', R.fvCapital.toFixed(0), cur],
+    ['Capitale necessario per target', R.requiredCapital.toFixed(0), cur],
+    ['Gap / Surplus capitale', R.capitalGap.toFixed(0), cur],
+    [],
+    ['━━━ REDDITO MENSILE AL RITIRO ━━━'],
+    ['SWR 4% portafoglio', R.monthly4pct.toFixed(0), cur+'/mese'],
+    ['Dividendi portafoglio netti', R.monthlyDivNet.toFixed(0), cur+'/mese'],
+    ['Pensione pubblica ('+(isIT?'INPS':'AVS+LPP')+')', R.altraPensione.toFixed(0), cur+'/mese'],
+    ['Totale reddito netto stimato', R.netMonthlyIncome.toFixed(0), cur+'/mese'],
+    ['Target rendita mensile', R.rendTarget.toFixed(0), cur+'/mese'],
+    ['Surplus/Deficit vs target', R.surplusDeficit.toFixed(0), cur+'/mese'],
+    ['Spese mensili stimate', R.costs.toFixed(0), cur+'/mese'],
+    ['Flusso netto disponibile', (R.netMonthlyIncome-R.costs).toFixed(0), cur+'/mese'],
+    [],
+    ['━━━ PROBABILITÀ SUCCESSO ━━━'],
+    ['Monte Carlo (5.000 sims) P50', R.mc?R.mc.p50.toFixed(0):'—', cur],
+    ['Monte Carlo P10 (pessimista)', R.mc?R.mc.p10.toFixed(0):'—', cur],
+    ['Monte Carlo P90 (ottimista)', R.mc?R.mc.p90.toFixed(0):'—', cur],
+    ['Probabilità successo', R.mc?(R.mc.probSuccess*100).toFixed(0)+'%':'—'],
+    ['Durata capitale stimata (4% SWR)', R.capitalLasts>50?'Perpetuo':R.capitalLasts.toFixed(0)+' anni'],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(sh1);
+  ws1['!cols'] = [{wch:40},{wch:18},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws1, '1. Dashboard');
+
+  // ══ FOGLIO 2: Portafoglio & Ribilanciamento ══
+  const sh2 = [
+    ['RIBILANCIAMENTO PORTAFOGLIO — '+dt, '', '', '', '', '', '', '', '', '', ''],
+    [`Capitale: ${R.total.toFixed(0)} ${cur} · Asset: ${R.assets.length} · Profilo: ${PROF[S.profile].label}`],
+    [],
+    ['TICKER','NOME','SETTORE','PESO ATTUALE','PESO OTTIMIZZATO','Δ PESO','VALORE ATTUALE','VALORE OTTIMIZZATO','Δ VALORE','SHARPE','DIV YIELD %','DCF UPSIDE','AZIONE'],
     ...R.assets.map((a,i)=>{
-      const d=td(a.ticker);const cw=a.cw,nw=R.hybrid[i];
-      const delta=nw-cw;const newVal=R.total*nw;
-      return[a.ticker,a.name,d.s,(cw*100).toFixed(2)+'%',(nw*100).toFixed(2)+'%',
-        (delta*100).toFixed(2)+'%',a.value.toFixed(0),newVal.toFixed(0),(newVal-a.value).toFixed(0),
-        ((d.r-R.rf)/(d.v||.18)).toFixed(2),(d.dy*100).toFixed(2)+'%',
-        delta>0.015?'COMPRA':delta<-0.015?'VENDI':'MANTIENI'];
+      const d = td(a.ticker);
+      const cw=a.cw, nw=R.hybrid[i], delta=nw-cw;
+      const newVal = R.total*nw;
+      const dcf = R.dcfScores[i];
+      return [
+        a.ticker, a.name.slice(0,30), d.s||'—',
+        (cw*100).toFixed(2)+'%', (nw*100).toFixed(2)+'%',
+        (delta>=0?'+':'')+(delta*100).toFixed(2)+'%',
+        Math.round(a.value), Math.round(newVal),
+        (delta>=0?'+':'')+Math.round(newVal-a.value),
+        ((d.r-R.rf)/(d.v||.18)).toFixed(2),
+        (d.dy*100).toFixed(2)+'%',
+        dcf?(dcf.upside>=0?'+':'')+(dcf.upside*100).toFixed(1)+'%':'—',
+        delta>0.015?'▲ COMPRA':delta<-0.015?'▼ VENDI':'● MANTIENI'
+      ];
     }),
-    [],['KPI PORTAFOGLIO OTTIMIZZATO'],
-    ['Sharpe Ratio',R.optM.sharpe.toFixed(3)],
-    ['Treynor Ratio',R.optM.treynor.toFixed(3)],
-    ['Rendimento atteso',fmtP(R.optM.r)],
-    ['Volatilità',fmtP(R.optM.vol)],
-    ['Beta',R.optM.beta.toFixed(2)],
-    ['Dividend Yield',fmtP(R.divGrossYield)],
+    [],
+    ['KPI PORTAFOGLIO','ATTUALE','OTTIMIZZATO'],
+    ['Sharpe Ratio', R.currM.sharpe.toFixed(3), R.optM.sharpe.toFixed(3)],
+    ['Sortino Ratio', (R.currM.sortino||0).toFixed(3), (R.optM.sortino||0).toFixed(3)],
+    ['Treynor Ratio', R.currM.treynor.toFixed(3), R.optM.treynor.toFixed(3)],
+    ['Rendimento atteso', (R.currM.r*100).toFixed(2)+'%', (R.optM.r*100).toFixed(2)+'%'],
+    ['Volatilità', (R.currM.vol*100).toFixed(2)+'%', (R.optM.vol*100).toFixed(2)+'%'],
+    ['Beta', R.currM.beta.toFixed(2), R.optM.beta.toFixed(2)],
+    ['VaR 95% giornaliero', (R.currM.var95daily||0).toFixed(3), (R.optM.var95daily||0).toFixed(3)],
+    ['Dividend Yield', (R.divGrossYield*100).toFixed(2)+'%', '—'],
   ];
-  const ws1=XLSX.utils.aoa_to_sheet(data);
-  ws1['!cols']=[{wch:12},{wch:26},{wch:18},{wch:12},{wch:12},{wch:10},{wch:14},{wch:14},{wch:12},{wch:8},{wch:10},{wch:10}];
-  XLSX.utils.book_append_sheet(wb,ws1,'Ribilanciamento');
+  const ws2 = XLSX.utils.aoa_to_sheet(sh2);
+  ws2['!cols'] = [{wch:12},{wch:28},{wch:18},{wch:14},{wch:15},{wch:10},{wch:15},{wch:16},{wch:12},{wch:8},{wch:11},{wch:12},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws2, '2. Portafoglio');
 
-  // Sheet 2: Piano Pensionistico
-  const data2=[
-    ['PIANO PENSIONISTICO'],
-    ['Capitale attuale',R.capital],['Anni alla pensione',R.anni],
-    ['Versamento mensile',R.versamento],['Inflazione',fmtP(R.inflazione)],
-    ['Rendimento reale',fmtP(R.realRet)],
-    [],['Capitale stimato al ritiro',R.fvCapital.toFixed(0)],
-    ['Rendita mensile (4%)',(R.fvCapital*0.04/12).toFixed(0)],
-    ['Altra pensione',R.altraPensione],['Dividendi mensili',(R.divIncome/12).toFixed(0)],
-    ['Costi mensili',R.costs],['Surplus/Deficit',R.surplusDeficit.toFixed(0)],
-    [],['OTTIMIZZAZIONE FISCALE'],
-    ['Paese',S.country],
-    ['Dividendi lordi/a',(R.fiscal.divGross||0).toFixed(0)],
-    ['Risparmio fiscale stimato',((R.fiscal.pirSaving||0)+(R.fiscal.taxSaving||R.fiscal.pillar3aSaving||0)).toFixed(0)],
+  // ══ FOGLIO 3: Anno per Anno ══
+  const sh3rows = [
+    ['PROIEZIONE ANNO PER ANNO', '', '', '', '', '', dt],
+    [`Scenario: SWR 4% + Dividendi + Pensione pubblica · Inflazione: ${(R.inflazione*100).toFixed(1)}%`],
+    [],
+    ['ANNO','ETÀ','FASE','CAPITALE','DIV. MENSILI NETTE','SWR 4%/MESE','PENS. PUBBL./MESE','TOTALE/MESE','vs TARGET','IMPOSTE/ANNO EST.'],
   ];
-  const ws2=XLSX.utils.aoa_to_sheet(data2);
-  XLSX.utils.book_append_sheet(wb,ws2,'Piano Pensionistico');
+  let cap = R.capital;
+  const pensNet = isIT
+    ? R.altraPensione * (1-(parseFloat(document.getElementById('pIRPEF')?.value||38)/100))
+    : (cp.avsNetMonthly||0) + (cp.lppRenditaNet||0);
+  for(let yr=0; yr<=Math.min(35, R.anni+20); yr++){
+    const age = R.eta + yr;
+    const isRetired = age >= R.etaPensione;
+    const r = isRetired ? R.realRet*0.8 : R.realRet;
+    if(!isRetired){ cap = cap*(1+r) + R.versamento*12; }
+    else {
+      const swr = cap*0.04;
+      cap = cap*(1+r) - swr;
+      if(cap<0) cap=0;
+    }
+    const divM = isRetired ? cap*R.divGrossYield/12*(1-(R.fiscal.divTax||0.22)*0.6) : 0;
+    const swrM = isRetired ? cap*0.04/12 : 0;
+    const pensM = isRetired ? pensNet : 0;
+    const totalM = divM + swrM + pensM;
+    const taxYear = isRetired ? (divM*12*(R.fiscal.divTax||0.22)*0.6 + pensNet*12*(isIT?0.38:0.22)*0.25) : 0;
+    sh3rows.push([
+      yr===0?'Oggi':'+'+yr,
+      age,
+      age===R.etaPensione?'🚀 RITIRO':isRetired?'Pensione':'Accumulo',
+      Math.round(cap),
+      isRetired?divM.toFixed(0):'',
+      isRetired?swrM.toFixed(0):'',
+      isRetired?pensM.toFixed(0):'',
+      isRetired?totalM.toFixed(0):'',
+      isRetired?(totalM-R.rendTarget>=0?'+':''+(totalM-R.rendTarget).toFixed(0)):'',
+      isRetired?(-taxYear/12).toFixed(0):'',
+    ]);
+  }
+  const ws3 = XLSX.utils.aoa_to_sheet(sh3rows);
+  ws3['!cols'] = [{wch:8},{wch:6},{wch:12},{wch:16},{wch:18},{wch:14},{wch:18},{wch:14},{wch:12},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, ws3, '3. Anno per Anno');
 
-  XLSX.writeFile(wb,'PensionIQ_Report_'+new Date().toLocaleDateString('it-IT').replace(/\//g,'-')+'.xlsx');
+  // ══ FOGLIO 4: Scenari Prelievo ══
+  const sh4 = [
+    ['SCENARI DI PRELIEVO DEL CAPITALE', '', '', '', '', dt],
+    [`Portafoglio al ritiro: ${R.fvCapital.toFixed(0)} ${cur} · Pensione pubblica netta: ${pensNet.toFixed(0)} ${cur}/mese`],
+    [],
+    ['SCENARIO','DESCRIZIONE','REDDITO MENSILE LORDO','IMPOSTE/MESE EST.','REDDITO NETTO/MESE','vs SPESE','CAPITALE RESIDUO','DURATA CAPITALE','NOTE'],
+    ['A. Solo Rendite','Solo dividendi e cedole. Capitale intatto.',
+      (R.fvCapital*R.divGrossYield/12 + pensNet).toFixed(0),
+      (R.fvCapital*R.divGrossYield/12*(R.fiscal.divTax||0.22)*0.6).toFixed(0),
+      (R.fvCapital*R.divGrossYield/12*(1-(R.fiscal.divTax||0.22)*0.6) + pensNet).toFixed(0),
+      (R.fvCapital*R.divGrossYield/12*(1-(R.fiscal.divTax||0.22)*0.6)+pensNet-R.costs).toFixed(0),
+      R.fvCapital.toFixed(0), 'Infinito','Massima conservazione patrimonio'],
+    ['B. SWR 4%','Prelievo annuo 4% capitale + pensione + dividendi.',
+      (R.fvCapital*0.04/12+R.fvCapital*R.divGrossYield/12+pensNet).toFixed(0),
+      (R.fvCapital*(0.04+R.divGrossYield)/12*0.22).toFixed(0),
+      (R.fvCapital*0.04/12*(1-0.1)+R.fvCapital*R.divGrossYield/12*(1-(R.fiscal.divTax||0.22)*0.6)+pensNet).toFixed(0),
+      (R.fvCapital*0.04/12*(1-0.1)+R.fvCapital*R.divGrossYield/12*(1-(R.fiscal.divTax||0.22)*0.6)+pensNet-R.costs).toFixed(0),
+      (R.fvCapital*0.95).toFixed(0), '~30 anni','Trinity Study: 95% prob. successo 30a'],
+    ['C. Esaurimento 25 anni','Annualità calcolata per esaurimento in 25 anni.',
+      (calcAnnuity(R.fvCapital,R.optM.r,25)/12+pensNet).toFixed(0),
+      (calcAnnuity(R.fvCapital,R.optM.r,25)/12*0.13).toFixed(0),
+      (calcAnnuity(R.fvCapital,R.optM.r,25)/12*(1-0.13)+pensNet).toFixed(0),
+      (calcAnnuity(R.fvCapital,R.optM.r,25)/12*(1-0.13)+pensNet-R.costs).toFixed(0),
+      '0', '25 anni','Reddito più alto, capitale esaurito'],
+    ['D. Esaurimento 30 anni','Annualità calcolata per esaurimento in 30 anni.',
+      (calcAnnuity(R.fvCapital,R.optM.r,30)/12+pensNet).toFixed(0),
+      (calcAnnuity(R.fvCapital,R.optM.r,30)/12*0.13).toFixed(0),
+      (calcAnnuity(R.fvCapital,R.optM.r,30)/12*(1-0.13)+pensNet).toFixed(0),
+      (calcAnnuity(R.fvCapital,R.optM.r,30)/12*(1-0.13)+pensNet-R.costs).toFixed(0),
+      '0', '30 anni','Equilibrio ottimale reddito/durata'],
+    ...(!isIT ? [['E. Sequenziale 3 Pilastri','3a (5a) → LPP cap. → Portafoglio libero',
+      ((cp.avsNetMonthly||0)+(cp.lppRenditaNet||0)+(cp.p3aMonthlyIncome||0)+R.fvCapital*0.04/12).toFixed(0),
+      '—',
+      ((cp.avsNetMonthly||0)+(cp.lppRenditaNet||0)+(cp.p3aMonthlyIncome||0)+R.fvCapital*0.04/12*0.9).toFixed(0),
+      ((cp.avsNetMonthly||0)+(cp.lppRenditaNet||0)+(cp.p3aMonthlyIncome||0)+R.fvCapital*0.04/12*0.9-R.costs).toFixed(0),
+      R.fvCapital.toFixed(0), '~30 anni','Ottimizzazione fiscale pilastri CH']] : []),
+  ];
+  const ws4 = XLSX.utils.aoa_to_sheet(sh4);
+  ws4['!cols'] = [{wch:22},{wch:38},{wch:18},{wch:14},{wch:18},{wch:12},{wch:16},{wch:14},{wch:38}];
+  XLSX.utils.book_append_sheet(wb, ws4, '4. Scenari Prelievo');
+
+  // ══ FOGLIO 5: Analisi Fiscale ══
+  const f = R.fiscal;
+  const sh5 = [
+    ['ANALISI FISCALE — '+dt, '', '', isIT?'🇮🇹 REGIME ITALIANO':'🇨🇭 REGIME SVIZZERO'],
+    [],
+    isIT ? ['DIVIDENDI (imposta sostitutiva 26%)'] : ['DIVIDENDI (imposta preventiva 35% → recuperabile)'],
+    ['Dividendi lordi/anno', f.divGross.toFixed(0), cur],
+    isIT
+      ? ['Ritenuta 26%', (f.divGross*0.26).toFixed(0), cur]
+      : ['Verrechnungssteuer 35%', (f.divWithheld||0).toFixed(0), cur+' (100% recuperabile)'],
+    isIT
+      ? ['Dividendi netti/anno', f.divNet.toFixed(0), cur]
+      : ['Dividendi netti (dopo recupero)', (f.netDiv||0).toFixed(0), cur],
+    [],
+    isIT ? ['PLUSVALENZE (26%)'] : ['PLUSVALENZE (0% per investitori privati CH)'],
+    ['Plusvalenze stimate/anno', (f.cgGross||0).toFixed(0), cur],
+    ['Imposta plusvalenze', isIT?(f.cgGross*0.26).toFixed(0):'0', cur, isIT?'26% IT':'0% CH — ESENTE'],
+    [],
+    ['RISPARMIO FISCALE STIMATO'],
+    isIT
+      ? ['PIR (0% su dividendi+CG se >5 anni)', f.pirSaving.toFixed(0), cur+'/anno']
+      : ['Pilastro 3a (deduzione reddito imponibile)', (f.p3aSaving||0).toFixed(0), cur+'/anno'],
+    isIT
+      ? ['Fondo pensione deducibilità', f.taxSaving.toFixed(0), cur+'/anno']
+      : ['Recupero Verrechnungssteuer', (f.reclaimed||0).toFixed(0), cur+'/anno'],
+    ['TOTALE RISPARMIO FISCALE/ANNO', (f.totalSavingYear||0).toFixed(0), cur+'/anno'],
+    [],
+    isIT ? ['SISTEMA PREVIDENZIALE ITALIANO'] : ['SISTEMA PREVIDENZIALE SVIZZERO — 3 PILASTRI'],
+    ...(isIT ? [
+      ['Pensione INPS (lorda/mese)', parseFloat(document.getElementById('pINPS')?.value||R.altraPensione).toFixed(0), 'EUR'],
+      ['Aliquota IRPEF marginale', document.getElementById('pIRPEF')?.value||38, '%'],
+      ['INPS netta/mese', (parseFloat(document.getElementById('pINPS')?.value||R.altraPensione)*(1-(parseFloat(document.getElementById('pIRPEF')?.value||38)/100))).toFixed(0), 'EUR'],
+      ['Fondo pensione complementare capital.', parseFloat(document.getElementById('pFondoPensione')?.value||0).toFixed(0), 'EUR'],
+      ['Contributo annuo fondo (deducibile)', Math.min(5164,parseFloat(document.getElementById('pFondoContrib')?.value||0)).toFixed(0), 'EUR'],
+      ['PIR investimento annuo', parseFloat(document.getElementById('pPIR')?.value||0).toFixed(0), 'EUR'],
+    ] : [
+      ['1° Pilastro AVS/AHV (lorda/mese)', cp.avsMonthly||0, 'CHF', 'Max 2024: CHF 2.520'],
+      ['AVS aliquota effettiva', ((cp.avsEffectiveRate||0)*100).toFixed(1)+'%'],
+      ['AVS netta/mese', (cp.avsNetMonthly||0).toFixed(0), 'CHF'],
+      ['2° Pilastro LPP capitale', (cp.lppCapital||0).toFixed(0), 'CHF'],
+      ['LPP modalità prelievo', cp.lppMode||'rendita'],
+      ['LPP rendita mensile lorda', (cp.lppMonthlyRendita||0).toFixed(0), 'CHF', 'Tasso conversione 6.8%'],
+      ['LPP rendita netta/mese', (cp.lppRenditaNet||0).toFixed(0), 'CHF'],
+      ['LPP prelievo capitale netto', (cp.lppCapitalNet||0).toFixed(0), 'CHF', 'Imposta prelievo: '+((cp.capitalWithdrawTax||0)*100).toFixed(1)+'%'],
+      ['3° Pilastro 3a capitale', (cp.p3aCapital||0).toFixed(0), 'CHF'],
+      ['3a imposta al prelievo', (cp.p3aTax||0).toFixed(0), 'CHF', 'Aliquota: '+((cp.p3aTaxRate||0)*100).toFixed(1)+'% (1/5 ordinaria)'],
+      ['3a netto', (cp.p3aNet||0).toFixed(0), 'CHF'],
+      ['3a risparmio fiscale annuo (contributo)', (cp.p3aAnnualSaving||0).toFixed(0), 'CHF/anno'],
+      ['Cantone', document.getElementById('pCanton')?.value||'LU'],
+      ['Aliquota cantonale+federale', ((cp.cantonTax||0.22)*100).toFixed(1)+'%'],
+    ]),
+  ];
+  const ws5 = XLSX.utils.aoa_to_sheet(sh5);
+  ws5['!cols'] = [{wch:38},{wch:18},{wch:10},{wch:42}];
+  XLSX.utils.book_append_sheet(wb, ws5, '5. Analisi Fiscale');
+
+  // ══ FOGLIO 6: Confronto LPP (CH only) / Strategie Fiscali (IT) ══
+  let sh6, ws6;
+  if(!isIT) {
+    // CH: confronto rendita vs capitale LPP
+    const lppCap = cp.lppCapital || 280000;
+    const cantonTax = cp.cantonTax || 0.22;
+    const lifeExp = 85; // aspettativa vita
+    const ageRet = R.etaPensione;
+    const yearsRetired = lifeExp - ageRet;
+
+    const rendita = lppCap * 0.068 / 12; // lordo/mese
+    const renditaTaxMonthly = rendita * cantonTax * 0.75; // effective
+    const renditaNet = rendita - renditaTaxMonthly;
+    const renditaTotalLifetime = renditaNet * 12 * yearsRetired;
+
+    const capitaleTax = lppCap * cantonTax / 5;
+    const capitaleNet = lppCap - capitaleTax;
+    // Se investito al 4% SWR
+    const capitaleMonthly = calcAnnuity(capitaleNet, R.optM.r, yearsRetired) / 12;
+    const capitaleTotalLifetime = capitaleMonthly * 12 * yearsRetired;
+
+    sh6 = [
+      ['ANALISI LPP: CONFRONTO RENDITA vs PRELIEVO IN CAPITALE', '', '', dt],
+      [`Capitale LPP accumulato: CHF ${lppCap.toLocaleString('it-CH')} · Età pensionamento: ${ageRet} · Aspettativa vita: ${lifeExp} anni`],
+      [],
+      ['PARAMETRO', 'OPZIONE RENDITA', 'OPZIONE CAPITALE', 'SPLIT 50/50'],
+      ['Importo lordo/mese', `CHF ${rendita.toFixed(0)}`, `CHF ${(capitaleMonthly/0.9).toFixed(0)} (ante imposta)`, `CHF ${(rendita/2+(capitaleMonthly/0.9)/2).toFixed(0)}`],
+      ['Imposta stimata', `CHF ${(renditaTaxMonthly).toFixed(0)}/mese`, `CHF ${capitaleTax.toFixed(0)} (una tantum)`, 'Misto'],
+      ['Netto/mese', `CHF ${renditaNet.toFixed(0)}`, `CHF ${capitaleMonthly.toFixed(0)}`, `CHF ${((renditaNet+capitaleMonthly)/2).toFixed(0)}`],
+      ['Durata pagamenti', `${yearsRetired} anni (fino a ${lifeExp}a)`, `${yearsRetired} anni (se SWR ${R.optM.r>0.05?'5%':'4%'})`, 'Combinato'],
+      ['Totale lifetime netto stimato', `CHF ${renditaTotalLifetime.toFixed(0)}`, `CHF ${capitaleTotalLifetime.toFixed(0)}`, `CHF ${((renditaTotalLifetime+capitaleTotalLifetime)/2).toFixed(0)}`],
+      ['Flessibilità', 'Nessuna (rendita fissa)', 'Alta (investibile)', 'Media'],
+      ['Trasmissione eredi', 'No (salvo rendita coniuge)', 'Sì (capitale residuo)', 'Parziale'],
+      ['Rischio longevità', 'Coperto (paga fino a morte)', 'A carico dell\'assicurato', 'Ridotto'],
+      ['Rendimento se mercato basso', 'Stabile (6.8%)', 'Variabile', 'Stabile parzialmente'],
+      [],
+      ['RACCOMANDAZIONE CENTRO STUDI'],
+      ['Regola generale:', `Se aspettativa vita > ${ageRet+14}: preferire RENDITA · Se < ${ageRet+14}: preferire CAPITALE`],
+      ['Nota fiscale:', `Il prelievo in capitale è tassato solo al ${((cantonTax/5)*100).toFixed(1)}% (vs ${(cantonTax*100).toFixed(0)}% ordinario). Vantaggio fiscale prelievo.`],
+      ['Strategia ottimale CH:', 'Split 25-50% capitale + rendita complementare. Riduce aliquota media e mantiene flessibilità.'],
+      [],
+      ['RISPARMIO PILASTRO 3A — SIMULAZIONE CONTRIBUTI'],
+      ['Anno','Contributo annuo','Risparmio fiscale','Capitale accumulato','Deduzione cumulata'],
+      ...Array.from({length:Math.min(R.anni,20)},(_,i)=>{
+        const cap3a = (cp.p3aCapital||0) * Math.pow(1.03, i+1) + (cp.p3aContrib||7056) * ((Math.pow(1.03,i+1)-1)/0.03);
+        return ['+'+( i+1), (cp.p3aContrib||7056).toFixed(0), ((cp.p3aContrib||7056)*cantonTax).toFixed(0), cap3a.toFixed(0), ((cp.p3aContrib||7056)*cantonTax*(i+1)).toFixed(0)];
+      }),
+    ];
+    ws6 = XLSX.utils.aoa_to_sheet(sh6);
+    ws6['!cols'] = [{wch:30},{wch:28},{wch:28},{wch:28}];
+    XLSX.utils.book_append_sheet(wb, ws6, '6. Analisi LPP');
+  } else {
+    // IT: Strategie fiscali dettagliate
+    const irpef = parseFloat(document.getElementById('pIRPEF')?.value||38)/100;
+    sh6 = [
+      ['STRATEGIE FISCALI ITALIA — '+dt],
+      [`Aliquota IRPEF marginale: ${(irpef*100).toFixed(0)}% · Capitale: ${R.total.toFixed(0)} EUR`],
+      [],
+      ['STRUMENTO', 'LIMITE', 'ALIQUOTA', 'RISPARMIO ANNUO STIMATO', 'NOTE'],
+      ['Fondo pensione (FIP/chiuso)', 'max €5.164/a', (irpef*100).toFixed(0)+'%', (Math.min(5164,parseFloat(document.getElementById('pFondoContrib')?.value||0))*irpef).toFixed(0)+' EUR', 'Riscatto: 9-15% min 15a'],
+      ['PIR (>5 anni)', 'max €40.000/a', '0% su CG+div', (Math.min(40000,parseFloat(document.getElementById('pPIR')?.value||0))*0.26).toFixed(0)+' EUR', '30% PMI italiane'],
+      ['ETF accumulazione vs distribuzione', '—', '0% annuale (accumulo)', (R.total*0.005).toFixed(0)+' EUR/a', 'Tassazione rinviata alla vendita'],
+      ['Obbligazioni BTP/Stato EU', '—', '12.5%', (R.total*0.1*0.135).toFixed(0)+' EUR (vs 26%)', 'Per quota obbligazionaria 10%'],
+      ['Compensazione minus/plus 4 anni', 'Entro 4 anni', 'Recupero credito', 'Variabile', 'Solo regime amministrato'],
+      ['TFR in fondo pensione', 'TFR annuale', '17%', '—', 'Vs IRPEF ordinaria (≥23%)'],
+      [],
+      ['SIMULAZIONE FONDO PENSIONE — 20 ANNI'],
+      ['Anno','Cap. fondo (crescita 4%/a)','Deduzione IRPEF annua','Risparmio fiscale cum.','Rendimento netto'],
+      ...Array.from({length:20},(_,i)=>{
+        const contrib = Math.min(5164, parseFloat(document.getElementById('pFondoContrib')?.value||3000));
+        const capF = (parseFloat(document.getElementById('pFondoPensione')?.value||0)) * Math.pow(1.04,i+1) + contrib*((Math.pow(1.04,i+1)-1)/0.04);
+        return ['+'+( i+1), capF.toFixed(0), contrib.toFixed(0), (contrib*irpef*(i+1)).toFixed(0), ((capF * 0.125)).toFixed(0)+' (tax riscatto ~12.5%)'];
+      }),
+    ];
+    ws6 = XLSX.utils.aoa_to_sheet(sh6);
+    ws6['!cols'] = [{wch:32},{wch:16},{wch:16},{wch:22},{wch:38}];
+    XLSX.utils.book_append_sheet(wb, ws6, '6. Strategie Fiscali IT');
+  }
+
+  const fname = `CentroStudiMonte_PensionePro_${isIT?'IT':'CH'}_${dt.replace(/\//g,'-')}.xlsx`;
+  XLSX.writeFile(wb, fname);
+  showNotification('Excel scaricato', `${fname} · 6 fogli: Dashboard, Portafoglio, Anno×Anno, Scenari, Fiscale, ${isIT?'Strategie IT':'Analisi LPP'}`, 'success');
 }
 function downloadTemplate(){
   const wb=XLSX.utils.book_new();
